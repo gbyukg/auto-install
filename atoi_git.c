@@ -96,7 +96,8 @@ static void
 atoi_git_fetchcode(git_remote *remote)
 {
     install_deb("Start fetch code...\n");
-    git_remote_callbacks rm_cb = GIT_REMOTE_CALLBACKS_INIT;
+    git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
+//    git_remote_callbacks rm_cb = GIT_REMOTE_CALLBACKS_INIT;
 
     const char *remote_name = git_remote_name(remote);
     const char *remote_url = git_remote_url(remote);
@@ -104,28 +105,31 @@ atoi_git_fetchcode(git_remote *remote)
     install_deb("Remote URL:  [%s]\n", remote_url);
     
     // 设置 remote callback 回调函数属性
-    rm_cb.credentials = cred_acquire_cb; // 设置访问权限
-    rm_cb.update_tips = &update_cb;
-    rm_cb.sideband_progress = &progress_cb;
-    git_err(git_remote_set_callbacks(remote, &rm_cb));
+    fetch_opts.callbacks.update_tips = &update_cb;
+    fetch_opts.callbacks.sideband_progress = &progress_cb;
+    fetch_opts.callbacks.credentials = cred_acquire_cb;
+
     // 链接远程库
     install_mes("Connecting to remote [%s : %s] ...\n",
                 remote_name,
                 remote_url);
-    git_err(git_remote_connect(remote, GIT_DIRECTION_FETCH));
+    git_err(git_remote_connect(remote, GIT_DIRECTION_FETCH, &fetch_opts.callbacks));
 
     // 更新代码
     install_mes("Fetching code        [%s : %s] ...\n",
                 remote_name,
                 remote_url);
-    git_err(git_remote_download(remote, NULL));
-    git_err(git_remote_update_tips(remote, NULL, NULL));
+    
+    
+    git_err(git_remote_download(remote, NULL, &fetch_opts));
     
     // 断开链接
     install_deb("Disconnect to remote [%s : %s]\n",
                 remote_name,
                 remote_url);
     git_remote_disconnect(remote);
+    
+    git_err(git_remote_update_tips(remote, &fetch_opts.callbacks, 1, fetch_opts.download_tags, NULL));
 }
 
 static int
@@ -239,12 +243,12 @@ atoi_git_checkout_branch(git_repository *repo,
     git_err(git_branch_create(&new_branch_ref,
                               repo,
                               install_name,
-                              (const git_commit*)target_branch_obj,
-                              1, NULL, NULL));
+                              (const git_commit*)target_branch_obj, 1));
 
     // checkout new branch
     install_mes("Checkout to the new branch [%s]\n", install_name);
-    git_err(git_repository_set_head(repo, git_reference_name(new_branch_ref), NULL, NULL));
+    git_err(git_repository_set_head(repo, git_reference_name(new_branch_ref)));
+
     git_err(git_checkout_tree(repo,
                               (const git_object*)target_branch_obj,
                               &checkout_opts));
@@ -425,7 +429,7 @@ atoi_git_merge(git_repository *repo, const char *refs_name)
     git_merge_options merge_opts = GIT_MERGE_OPTIONS_INIT;
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     
-    checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE_CREATE
+    checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE
     | GIT_CHECKOUT_ALLOW_CONFLICTS
     | GIT_CHECKOUT_REMOVE_UNTRACKED;
     
@@ -479,7 +483,7 @@ void branch_install_prepare_git(void)
         
         // 是否需要更新远程库, 同一用户下的多个分支只需更新一次该用户的远程库
         if (strstr(update_remote, bc->remote) == NULL) {
-//            atoi_git_fetchcode(remote);
+            atoi_git_fetchcode(remote);
             strcat(update_remote, bc->remote);
         }
         
