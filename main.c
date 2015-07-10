@@ -156,99 +156,114 @@ getConfig(struct install_options *opt) {
     const char *sc_admin            = getenv("ATOI_SC_ADMIN");
     const char *sc_admin_pwd        = getenv("ATOI_SC_ADMIN_PWD");
     
+#ifdef SERVERINSTALL
+    const char *dbname              = getenv("");
+    const char *db_port             = getenv("DB_PORT");
+    const char *db_host             = getenv("DB_HOST");
+    const char *db_admin            = getenv("DB_USER");
+    const char *db_admin_pwd        = getenv("DB_PASSWORD");
+#else
     const char *dbname              = getenv("ATOI_DBNAME");
     const char *db_port             = getenv("ATOI_DB_PORT");
     const char *db_host             = getenv("ATOI_DB_HOST");
     const char *db_admin            = getenv("ATOI_DB_ADMIN");
     const char *db_admin_pwd        = getenv("ATOI_DB_ADMIN_PWD");
+#endif
     
     const char *fts_type            = getenv("ATOI_FTS_TYPE");
     const char *fts_host            = getenv("ATOI_FTS_HOST");
     const char *fts_port            = getenv("ATOI_FTS_PORT");
     
+    const char *atoi_tmp_path       = getenv("ATOI_TMP_PATH");
+    
     // install config
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_git_path",
+                                          VERSION ".atoi_git_path",
                                           &git_path));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_web_path",
+                                          VERSION".atoi_web_path",
                                           &web_path));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_build_path",
+                                          VERSION".atoi_build_path",
                                           &build_path));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_install_hook_script",
+                                          VERSION".atoi_install_hook_script",
                                           &install_hook_script));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_init_db_script",
+                                          VERSION".atoi_init_db_script",
                                           &init_db_script));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_def_base_user",
+                                          VERSION".atoi_def_base_user",
                                           &def_base_user));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_def_head_user",
+                                          VERSION".atoi_def_head_user",
                                           &def_head_user));
 
     // db config
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_default_dbname",
+                                          VERSION".atoi_default_dbname",
                                           &dbname));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_db_port",
+                                          VERSION".atoi_db_port",
                                           &db_port));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_db_host",
+                                          VERSION".atoi_db_host",
                                           &db_host));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_db_admin",
+                                          VERSION".atoi_db_admin",
                                           &db_admin));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_db_admin_pwd",
+                                          VERSION".atoi_db_admin_pwd",
                                           &db_admin_pwd));
     
     // fts config
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_fts_type",
+                                          VERSION".atoi_fts_type",
                                           &fts_type));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_fts_host",
+                                          VERSION".atoi_fts_host",
                                           &fts_host));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_fts_port",
+                                          VERSION".atoi_fts_port",
                                           &fts_port));
     
     // sc config
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_sc_license",
+                                          VERSION".atoi_sc_license",
                                           &sc_license));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_web_host",
+                                          VERSION".atoi_web_host",
                                           &web_host));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_sc_admin",
+                                          VERSION".atoi_sc_admin",
                                           &sc_admin));
     CUS_SYSCALL(atoi_config_lookup_config(&config,
                                           ATOI_CON_STRING,
-                                          "local.atoi_sc_admin_pwd",
+                                          VERSION".atoi_sc_admin_pwd",
                                           &sc_admin_pwd));
+    
+    CUS_SYSCALL(atoi_config_lookup_config(&config,
+                                          ATOI_CON_STRING,
+                                          VERSION".atoi_tmp_path",
+                                          &atoi_tmp_path));
 
     // install config
     atoi_install_opt.git_path            = strdup(git_path);
@@ -276,6 +291,8 @@ getConfig(struct install_options *opt) {
     atoi_install_opt.fts_type = strdup(fts_type);
     atoi_install_opt.fts_host = strdup(fts_host);
     atoi_install_opt.fts_port = strdup(fts_port);
+    
+    atoi_install_opt.tmp_path = strdup(atoi_tmp_path);
     
     const char *home_dir = NULL;
     if ((home_dir = getenv("HOME")) != NULL) {
@@ -342,7 +359,10 @@ int main(int argc, const char * argv[])
         usage();
         exit(1);
     }
+    
+    // 系统初始化
     init_install();
+
     int i = 1;
     if (strcmp("install", argv[i]) == 0) {
         struct option long_options[] =
@@ -355,8 +375,8 @@ int main(int argc, const char * argv[])
             {"pack-install",        required_argument, 0, 'P'},
             {"dbname",              required_argument, 0, 'd'},
             {"install-name",        required_argument, 0, 'n'},
-            {"help",                no_argument,       0, 'h'},
             {"cp-vendor",           required_argument, 0, 'c'},
+            {"help",                no_argument,       0, 'h'},
             {"cp-dataloader",       no_argument, &atoi_install_opt.cp_dataloader, 1},
             {"build-code",          no_argument, &atoi_install_opt.build_code_or_not, 1},
             {"no-build-code",       no_argument, &atoi_install_opt.build_code_or_not, 0},
@@ -407,7 +427,6 @@ int main(int argc, const char * argv[])
                         break;
                     atoi_install_opt.install_method = PACKAGE_INSTALL;
                     atoi_install_opt.package_info = strndup(optarg, strlen(optarg));
-//                    SYSCALL(analyse_package(optarg));
                     break;
                 case 'c':
                     
@@ -455,6 +474,7 @@ int main(int argc, const char * argv[])
                 free(relast);
                 relast = relast_next;
             }
+            free(atoi_install_opt.install_name);
             break;
         case PULL_INSTALL:
             pull_install();
@@ -488,12 +508,17 @@ int main(int argc, const char * argv[])
             free(atoi_install_opt.install_name);
             break;
         case WEB_DIR_INSTALL:
+            // check dir exist
+            
             start_install();
             free(atoi_install_opt.install_name);
             break;
         case PACKAGE_INSTALL:
-            package_install(atoi_install_opt.package_info);
             // install from package
+            package_install(atoi_install_opt.package_info);
+            
+            free(atoi_install_opt.package_info);
+            free(atoi_install_opt.install_name);
             break;
         default:
             usage();

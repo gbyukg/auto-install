@@ -10,7 +10,7 @@
 
 star="********************"
 
-[[ "debug" == "${1}"  ]] && set -x
+[[ "debug" == "${1}"  ]] && readonly DEBUG=debug && set -x
 shift
 
 # before_install
@@ -31,6 +31,10 @@ shift
 
 # /document/gbyukg/www/sugar/build_path/
 readonly BUILD_DIR=${1}
+shift
+
+# /Users/gbyukg/tmp/
+readonly TMP_DIR=${1}
 shift
 
 readonly WORK_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -132,38 +136,58 @@ package_install()
     local tmp_dir="${4}"
     #exit 1
 
-    if [[ "Xurl" == X"${install_meth}" ]]; then
+    if [[ "Xurl" == X"${install_meth}" ]]; then # 安装文件存在于远程服务器
         #set -e
         cus_echo "Download package [${download_url}]"
-        [[ -f /tmp/"${package_name}" ]] && rm -rf /tmp/"${package_name}"
-        [[ -f /tmp/"${tmp_dir}" ]] && rm -rf /tmp/"${tmp_dir}"
+        [[ -f "${TMP_DIR}${package_name}" ]] && rm -rf "${TMP_DIR}${package_name}"
+        [[ -f "${TMP_DIR}${tmp_dir}" ]] && rm -rf "${TMP_DIR}${tmp_dir}"
         # 下载压缩包
-        cus_echo "下载文件到 /tmp ..."
-        wget -P /tmp "${download_url}"
+        cus_echo "下载文件到 ${TMP_DIR} ..."
+        wget -P "${TMP_DIR}" "${download_url}"
         error_check_exit "无法下载压缩包 [${download_url}]"
 
-        unzip -d /tmp/"${tmp_dir}" /tmp/"${package_name}" > /dev/null 2>&1
-        error_check_exit "解压文件 [/tmp/${package_name}] 失败"
+        # 解压缩文件
+        cus_echo "解压缩文件 [${TMP_DIR}${package_name}] 到 [${TMP_DIR}${tmp_dir}] 下..."
+        unzip -d "${TMP_DIR}${tmp_dir}" "${TMP_DIR}${package_name}" > /dev/null 2>&1
+        error_check_exit "解压文件 [${TMP_DIR}${package_name}] 失败"
 
-        local install_package_name=$(ls -d /tmp/"${tmp_dir}"/SugarUlt-Full*)
+        local install_package_name=$(ls -d "${TMP_DIR}${tmp_dir}"/SugarUlt-Full*)
 
         echo "${install_package_name}"
-        [[ -f "${WEB_DIR}/${INSTALL_NAME}" ]] && rm -rf "${WEB_DIR}/${"INSTALL_NAME"}"
+        [[ -d "${WEB_DIR}/${INSTALL_NAME}" ]] \
+            && cus_echo "安装文件 ${INSTALL_NAME} 已经存在, 删除..." \
+            && rm -rf "${WEB_DIR}/${INSTALL_NAME}"
+
+        cus_echo "移动文件 [${install_package_name}] 到 ${WEB_DIR}/${INSTALL_NAME} 下..."
         mv "${install_package_name}" "${WEB_DIR}/${INSTALL_NAME}"
 
-        rm -rf /tmp/"${tmp_dir}"
-    elif [[ "Xlczip" == X"${install_meth}" ]]; then
+        #cus_echo "清空缓存目录 ${TMP_DIR}${tmp_dir}..."
+        #rm -rf "${TMP_DIR}${tmp_dir}"
+
+    elif [[ "Xlczip" == X"${install_meth}" ]]; then # 安装文件存在于本地
+        # 判断文件是否存在
         [[ -f "${package_name}" ]] || error_check_exit "安装文件 [${package_name}] 不存在!"
-        unzip -d /tmp/"${tmp_dir}" "${package_name}" > /dev/null 2>&1
+
+        # 解压缩文件
+        cus_echo "解压缩文件 [${TMP_DIR}${package_name}] 到 [${tmp_dir}] 下..."
+        unzip -d "${TMP_DIR}${tmp_dir}" "${package_name}" > /dev/null 2>&1
         error_check_exit "解压文件 [${package_name}] 失败"
+
         # 解压后安装包名
-        local install_package_name=$(ls -d /tmp/"${tmp_dir}"/SugarUlt-Full*)
-        [[ -f "${WEB_DIR}/${INSTALL_NAME}" ]] && rm -rf "${WEB_DIR}/${"INSTALL_NAME"}"
+        local install_package_name=$(ls -d "${TMP_DIR}${tmp_dir}"/SugarUlt-Full*)
+
+        [[ -d "${WEB_DIR}/${INSTALL_NAME}" ]] \
+            && cus_echo "安装文件 ${INSTALL_NAME} 已经存在, 删除..." \
+            && rm -rf "${WEB_DIR}/${INSTALL_NAME}"
+
+        cus_echo "移动文件 [${install_package_name}] 到 ${WEB_DIR}/${INSTALL_NAME} 下..."
         mv "${install_package_name}" "${WEB_DIR}/${INSTALL_NAME}"
-        [[ -f /tmp/"${tmp_dir}" ]] && rm -rf /tmp/"${tmp_dir}"
+        [[ -f "${TMP_DIR}${tmp_dir}" ]] && rm -rf "${TMP_DIR}${tmp_dir}"
 
         # 删除临时文件
-        rm -rf /tmp/"${tmp_dir}"
+        #cus_echo "清空缓存目录 ${TMP_DIR}${tmp_dir}..."
+        #rm -rf "${TMP_DIR}${tmp_dir}"
+
     elif [[ "Xupgrade" == X"${install_meth}" ]]; then
         mkdir -p "${WEB_DIR}/${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/custom/include/Config/configs"
 
@@ -183,8 +207,8 @@ db2CONFIG
 
     cat <<logCONFIG > logger.config.php
 <?php
-\$config['log_file'] = '/Users/gbyukg/tmp/SugarInstanceManager.log';
-\$config['log_dir'] = '/Users/gbyukg/tmp/';
+\$config['log_file'] = '${TMP_DIR}SugarInstanceManager.log';
+\$config['log_dir'] = '${TMP_DIR}';
 logCONFIG
 
         sed -i '' "s/\s*\$su->backup();//g" "${WEB_DIR}/${INSTALL_NAME}"/vendor/sugareps/SugarInstanceManager/upgrade.php;
@@ -193,6 +217,9 @@ logCONFIG
         local sysconf="${WEB_DIR}/${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/custom/include/Config/configs/system.config.php"
         local db2conf="${WEB_DIR}/${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/custom/include/Config/configs/db2cli.config.php"
         local logconf="${WEB_DIR}/${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/custom/include/Config/configs/logger.config.php"
+
+        [[ -n "${DEBUG}" ]] && cat "${sysconf}" && cat "${db2conf}" && cat "${logconf}"
+
         [[ -f "${sysconfig}" ]] && rm -rf "${sysconf}"
         [[ -f "${db2conf}" ]] && rm -rf "${db2conf}"
         [[ -f "${logconf}" ]] && rm -rf "${logconf}"
@@ -201,12 +228,22 @@ logCONFIG
         mv logger.config.php "${logconf}"
 
         cd "${WEB_DIR}/${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/"
-        php upgrade.php --instance_path "${WEB_DIR}/${INSTALL_NAME}" --upgrade_zip "${package_name}" 
+
+        cus_echo "安装升级包文件 [${package_name}]..."
+        php upgrade.php --instance_path "${WEB_DIR}${INSTALL_NAME}" --upgrade_zip "${package_name}" 
     fi
+}
+
+after_package_install()
+{
+    cus_echo "Running hook [after_package_install]"
+
+    cus_echo "Running hook [after_package_install] finished"
 }
 
 before_install()
 {
+    # 修改 PHP 错误日志
     cus_echo "Running hook [before_install]"
     cd "${WEB_DIR}${INSTALL_NAME}"
     cus_echo "composer.phar install..."
@@ -328,12 +365,11 @@ dataloader()
     local DB_PWD="${5}"
     if [[ -z "${6}"  ]]; then
         local DATALOADER_PATH="${GIT_DIR}"ibm/dataloaders
-        local GIT_RESET="true"
     else
         local DATALOADER_PATH=${6}
     fi
-    cus_echo "running data loader"
-    cd "${DATALOADER_PATH}"
+    cus_echo "running data loader in [${DATALOADER_PATH}]..."
+    cd "${DATALOADER_PATH}" && rm -rf config.php
 
     cat <<CONFIG > config.php
 <?php
@@ -371,7 +407,8 @@ CONFIG
      #--> cd batch_sugar/RTC_19211; php -f rtc_19211_main.php RTC_19211 <--
     php populate_SmallDataset.php
 
-    [[ X"true" == X"${GIT_RESET}" ]] && cd "${GIT_DIR}ibm/dataloaders" && git checkout config.php
+    #[[ X"true" == X"${GIT_RESET}" ]] && cd "${GIT_DIR}ibm/dataloaders" && git checkout config.php
+    [[ -z "${6}"  ]] && cd "${GIT_DIR}ibm/dataloaders" && git checkout config.php
 
     cd "${WEB_DIR}${INSTALL_NAME}/batch_sugar/RTC_19211"
     php -f rtc_19211_main.php
@@ -383,22 +420,9 @@ CONFIG
 # $2: install dir
 after_install()
 {
-    #local is_run_unittest=${1}
-    #local is_load_avl=${2}
-
-    #cus_echo "Running hook [after_install]"
-    ## run AVL
-    #cus_echo "avl: ${is_load_avl}"
-    #cus_echo "unt: ${is_run_unittest}"
-    #[[ X"${is_load_avl}" == "XTRUE" ]] && load_avl
-
-    ## run unit test
-    #[[ X"${is_run_unittest}" == "XTRUE" ]] && run_unittest
-
     touch "${WEB_DIR}${INSTALL_NAME}/sql.sql"
     cp "${WORK_DIR}/repair.sh" "${WEB_DIR}${INSTALL_NAME}"
     cp -f "${WORK_DIR}/ChromePhp.php" "${WEB_DIR}${INSTALL_NAME}/include/ChromePhp.php"
-    #cp "/document/gbyukg/www/test/installSC/installSC/ChromePhp.php" "${WEB_DIR}${INSTALL_NAME}/include/ChromePhp.php"
     echo "require_once 'ChromePhp.php';" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
 
     add_ignore
@@ -523,6 +547,7 @@ load_avl()
 
 test()
 {
+    set -x
     cus_echo ""
 }
 

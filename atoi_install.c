@@ -6,6 +6,7 @@
 //  Copyright (c) 2015年 张贺. All rights reserved.
 //
 
+#include <dirent.h>
 #include "atoi_install.h"
 
 extern int errno;
@@ -212,7 +213,9 @@ void pull_install()
     
     char install_name[64];
     snprintf(install_name, 63, "pull_install_%s", atoi_install_opt.pull_info->pull_number);
-    atoi_install_opt.install_name = strndup(install_name, strlen(install_name));
+    if (atoi_install_opt.install_name != NULL) {
+        atoi_install_opt.install_name = strndup(install_name, strlen(install_name));
+    }
     install_mes("Install name [%s]\n",
                 atoi_install_opt.install_name);
     
@@ -229,11 +232,13 @@ void branch_install()
 
 void package_install(const char *get_package_info)
 {
-    atoi_install_opt.dataloader = 0;
+    atoi_install_opt.build_code_or_not = 0;
     
     install_mes("Install from package\n");
     const char *install_name = "package_install";
-    atoi_install_opt.install_name = strdup(install_name);
+    if (atoi_install_opt.install_name == NULL)
+        atoi_install_opt.install_name = strdup(install_name);
+    
     int i = 0;
     char *install_package = atoi_malloc(strlen(get_package_info) + sizeof(char));
     time_t now;
@@ -241,6 +246,12 @@ void package_install(const char *get_package_info)
     
     strcpy(install_package, get_package_info);
     char *upgrade_package = strtok(install_package, " ");
+    
+//    while (upgrade_package != NULL) {
+//        printf("%s\n", upgrade_package);
+//        upgrade_package = strtok(NULL, " ");
+//    }
+
     while (upgrade_package != NULL) {
         if (i == 0) {
             // 安装基础包
@@ -249,13 +260,19 @@ void package_install(const char *get_package_info)
                 if (strstr(upgrade_package, ".zip") != NULL) {
                     const char *package_name = strrchr(upgrade_package, '/');
                     char param[256];
+                    char dataloader_path[256];
                     // url
                     // 包名
                     // 缓存目录名
                     snprintf(param, 255, "url \"%s\" \"%s\" \"%ld\"", upgrade_package, package_name+1, now);
                     if (install_hook("package_install", param) != 0)
                         extErr("Can not download package from [%s]\n", upgrade_package);
-                    atoi_install_opt.build_code_or_not = 0;
+                    
+                    // 使用升级包中的 dataloader 文件
+                    atoi_install_opt.cp_dataloader = 1;
+                    snprintf(dataloader_path, 255, "%s%ld/ibm/dataloaders", atoi_install_opt.tmp_path, now);
+                    atoi_install_opt.dataloader_dir = strdup(dataloader_path);
+                    install_deb("Data loader folder [%s]\n", atoi_install_opt.dataloader_dir);
                     start_install();
                 } else {
                     extErr("下载文件必须为 zip 文件: [%s]", upgrade_package);
@@ -281,7 +298,14 @@ void package_install(const char *get_package_info)
         }
         i++;
         upgrade_package = strtok(NULL, " ");
+        
+        // run dataloader
+        if (upgrade_package == NULL) {
+            if (install_hook("after_package_install", NULL) != 0)
+                extErr("执行hook [after_package_install] 失败!\n");
+        }
     }
+    free(install_package);
 }
 
 static void
@@ -339,16 +363,18 @@ pre_install()
                     extErr("Fork error...\n");
                     break;
                 case 0:
-                    if (atoi_install_opt.dataloader && atoi_install_opt.cp_dataloader) {
-                        install_deb("Copy dataloader\n");
-                        char dl_target[256];
-                        char cp_command[256];
-                        snprintf(dl_target, 255, "%s-dataloaders", atoi_install_opt.install_name);
-                        atoi_install_opt.dataloader_dir = strdup(dl_target);
-                                                snprintf(cp_command, 255, "cp -R %s/ibm/dataloaders /tmp/%s", atoi_install_opt.git_path, atoi_install_opt.dataloader_dir);
-                        if (shell_call(0, cp_command) != 0)
-                            extErr("Copying dataloader wrong!");
-                    }
+//                    if (atoi_install_opt.dataloader && atoi_install_opt.cp_dataloader) {
+//                        install_deb("Copy dataloader\n");
+//                        char dl_target[256];
+//                        char cp_command[256];
+//                        snprintf(dl_target, 255, "%s-dataloaders", atoi_install_opt.install_name);
+//                        atoi_install_opt.dataloader_dir = strdup(dl_target);
+//                                                snprintf(cp_command, 255, "cp -R %s/ibm/dataloaders %s%s",
+//                                                         atoi_install_opt.tmp_path,
+//                                                         atoi_install_opt.git_path, atoi_install_opt.dataloader_dir);
+//                        if (shell_call(0, cp_command) != 0)
+//                            extErr("Copying dataloader wrong!");
+//                    }
                     exit(EXIT_SUCCESS);
                     break;
                 default:
@@ -393,9 +419,12 @@ static long curl_install_step(const char *post)
     char install_url[512];
     char host[512];
     char ref[512];
+    char cookie_file[512];
     char *scp_web_host = strdup(atoi_install_opt.web_host);
     int debug = atoi_install_opt.debug;
-    char *cookie_file = "/tmp/atoi_install.cookie";
+    
+    snprintf(cookie_file, 511, "%s%d-atoi.cookie", atoi_install_opt.tmp_path, getpid());
+    install_deb("Cookie file: [%s]\n", cookie_file);
     
     snprintf(install_url, 511, "%s/%s/install.php", atoi_install_opt.web_host, atoi_install_opt.install_name);
     snprintf(host, 511, "Host: %s", scp_web_host + 7);
@@ -437,13 +466,29 @@ static long curl_install_step(const char *post)
 void
 start_install()
 {
+    char dir_path[256];
+    snprintf(dir_path, 255, "%s%s", atoi_install_opt.web_path, atoi_install_opt.install_name);
+    DIR* dir = opendir(dir_path);
+    
+    if (dir)
+    {
+        /* Directory exists. */
+        closedir(dir);
+    }
+    else if (ENOENT == errno)
+    {
+        extErr("安装文件 [%s] 不存在\n", dir_path);
+        /* Directory does not exist. */
+    }
+    
     pre_install();
     
     FILE *sfd = NULL;
     char param[BUF_SIZE];
-    char *lineptr = (char *)malloc(BUF_SIZE);;
+    char *lineptr = (char *)malloc(BUF_SIZE);
     size_t line_len = BUF_SIZE;
-    char fileName[] = "/tmp/atoi_install_XXXXXX";
+    char fileName[512];
+    snprintf(fileName, 511, "%s%d-atoi-XXXXXX", atoi_install_opt.tmp_path, getpid());
 
     install_mes("Start installing...\n");
     

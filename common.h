@@ -22,6 +22,7 @@
 #include "atoi_curl.h"
 
 #ifdef SERVERINSTALL
+#define VERSION "server"
 #define KNRM
 #define KRED
 #define KGRN
@@ -31,6 +32,7 @@
 #define KCYN
 #define KWHT
 #else
+#define VERSION "local"
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -194,6 +196,8 @@ struct install_options {
     char *fts_type;
     char *fts_host;
     char *fts_port;
+    
+    char *tmp_path;
     
     char git_token[64]; // github token
     union {
