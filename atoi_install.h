@@ -21,15 +21,6 @@ struct MemoryStruct {
 
 char *get_cur_branch_name(void);
 
-static size_t
-WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
-
-static void
-pre_install(void);
-
-static void
-package_upgrade(const char *package_path);
-
 void
 start_install(void);
 
@@ -40,11 +31,6 @@ void pull_install(void);
 void branch_install(void);
 
 void package_install(const char *packageInfo);
-
-static long curl_install_step(const char *post);
-
-static void
-after_install(void);
 
 // install from current git repository
 void git_install(void);

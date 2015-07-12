@@ -116,7 +116,7 @@ int analyse_branch(const char *get_branch_info)
     }
     
     while (cur_branch_info != NULL) {
-        _atoi_branch_info_ *new_node, *current;
+        _atoi_branch_info_ *new_node = NULL, *current = NULL;
         new_node = (_atoi_branch_info_*)atoi_malloc(sizeof(_atoi_branch_info_));
         
         char *branch_name = NULL;

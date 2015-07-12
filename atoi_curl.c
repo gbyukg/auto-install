@@ -13,6 +13,10 @@ extern struct install_options atoi_install_opt;
 
 static
 void dump(const char *text,
+          FILE *stream, unsigned char *ptr, size_t size);
+
+static
+void dump(const char *text,
           FILE *stream, unsigned char *ptr, size_t size)
 {
     size_t i;

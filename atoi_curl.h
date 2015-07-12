@@ -16,10 +16,6 @@ char curl_err_buf[CURL_ERROR_SIZE];
 
 CURL *atoi_get_curl(const char *url,  struct curl_slist **headers);
 
-static
-void dump(const char *text,
-          FILE *stream, unsigned char *ptr, size_t size);
-
 int my_trace(CURL *handle, curl_infotype type,
             char *data, size_t size,
             void *userp);

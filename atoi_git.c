@@ -10,6 +10,52 @@
 
 extern struct install_options atoi_install_opt;
 
+static void
+atoi_git_create_remote(git_repository *repo,
+                       git_remote **remote,
+                       const char *remote_name,
+                       const char *url);
+
+static int
+cred_acquire_cb(git_cred **out,
+                const char * url,
+                const char * username_from_url,
+                unsigned int allowed_types,
+                void* payload);
+
+static int
+progress_cb(const char *str, int len, void *data);
+
+/**
+ *  Fetch code from remote
+ *
+ *  @param remote git_remote
+ */
+static void
+atoi_git_fetchcode(git_remote *remote);
+
+static int
+update_cb(const char *refname,
+          const git_oid *a,
+          const git_oid *b,
+          void *data);
+
+static int
+atpi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload);
+
+static int
+atoi_git_repository_clean(git_repository *repo);
+
+static void
+atoi_git_checkout_branch(git_repository *repo,
+                         git_reference *new_branch_ref,
+                         const char *target_branch_ref_name,
+                         const char *install_name);
+
+static void
+atoi_git_commit_from_index(git_repository *repo, const char *commit_message);
+
+
 void
 atoi_git_init(const char *git_path, git_repository **repo)
 {
@@ -226,7 +272,7 @@ atoi_git_checkout_branch(git_repository *repo,
                         install_name,
                         "");
 
-            git_reference *nnew_branch_ref;
+            git_reference *nnew_branch_ref = NULL;
             char *n_target_branch_ref_name = "refs/heads/master";
             atoi_git_checkout_branch(repo,
                                      nnew_branch_ref,
@@ -271,7 +317,7 @@ atoi_git_commit_from_index(git_repository *repo, const char *commit_message)
     git_index     *index     = NULL;
     git_tree      *tree      = NULL;
     git_commit    *commit    = NULL;
-    git_oid tree_id = {0}, new_commit_id = {0}, commit_id = {0};
+    git_oid tree_id, new_commit_id, commit_id;
     const char *commit_user_name  = NULL;
     const char *commit_user_email = NULL;
     
@@ -489,7 +535,7 @@ void branch_install_prepare_git(void)
         
         // 判断为第一个安装分支, 将该分支作为基准分支创建新branch
         if (atoi_install_opt.branch_info->index == 0) {
-            git_reference *new_branch_ref;
+            git_reference *new_branch_ref = NULL;
             atoi_git_checkout_branch(repo, new_branch_ref, refs_name, atoi_install_opt.install_name);
 //            git_reference_free(new_branch_ref);
             // update submodule
@@ -556,7 +602,7 @@ void pull_install_prepare_git(void)
     atoi_git_fetchcode(head_remote);
     
     // create new branch from head
-    git_reference *new_branch_ref;
+    git_reference *new_branch_ref = NULL;
     atoi_git_checkout_branch(repo, new_branch_ref, base_refs_name, atoi_install_opt.install_name);
     
     // update submodule

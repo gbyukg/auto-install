@@ -36,52 +36,7 @@ typedef struct _atoi_git_status
 void
 atoi_git_init(const char *git_path, git_repository **repo);
 
-static void
-atoi_git_create_remote(git_repository *repo,
-                       git_remote **remote,
-                       const char *remote_name,
-                       const char *url);
-
-static int
-cred_acquire_cb(git_cred **out,
-                const char * url,
-                const char * username_from_url,
-                unsigned int allowed_types,
-                void* payload);
-
-static int
-progress_cb(const char *str, int len, void *data);
-
-/**
- *  Fetch code from remote
- *
- *  @param remote git_remote
- */
-static void
-atoi_git_fetchcode(git_remote *remote);
-
-static int
-update_cb(const char *refname,
-                     const git_oid *a,
-                     const git_oid *b,
-                     void *data);
-
-static int
-atpi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload);
-
-static int
-atoi_git_repository_clean(git_repository *repo);
-
-static void
-atoi_git_checkout_branch(git_repository *repo,
-                         git_reference *new_branch_ref,
-                         const char *target_branch_ref_name,
-                         const char *install_name);
-
 void branch_install_prepare_git();
-
-static void
-atoi_git_commit_from_index(git_repository *repo, const char *commit_message);
 
 void pull_install_prepare_git(void);
 

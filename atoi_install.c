@@ -13,6 +13,20 @@ extern int errno;
 extern char curl_err_buf[];
 extern struct install_options atoi_install_opt;
 
+static void
+after_install(void);
+
+static size_t
+WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+
+static void
+pre_install(void);
+
+//static void
+//package_upgrade(const char *package_path);
+
+static long curl_install_step(const char *post);
+
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
