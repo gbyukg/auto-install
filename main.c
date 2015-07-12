@@ -350,6 +350,9 @@ init_install() {
 #else
     getConfig(&atoi_install_opt);
 #endif
+    
+    if (install_hook("init", NULL) != 0)
+        extErr("Run hook [init] wrong!\n");
 
     curl_global_init(CURL_GLOBAL_ALL);
 }
@@ -502,6 +505,7 @@ int main(int argc, const char * argv[])
             // 资源释放
             _atoi_branch_info_ *relast = atoi_install_opt.branch_info;
             while (relast != NULL) {
+                install_deb("Free branch source...\n");
                 _atoi_branch_info_ *relast_next = relast->next;
                 free(relast);
                 relast = relast_next;
@@ -510,7 +514,8 @@ int main(int argc, const char * argv[])
             break;
         case PULL_INSTALL:
             pull_install();
-            
+
+#ifndef SERVERINSTALL
             // 资源释放
             free(atoi_install_opt.pull_info->pull_number);
             free(atoi_install_opt.pull_info->diff_url);
@@ -528,6 +533,7 @@ int main(int argc, const char * argv[])
             free(atoi_install_opt.pull_info->base_repo_name);
             free(atoi_install_opt.pull_info->base_repo_ssh_url);
             free(atoi_install_opt.pull_info);
+#endif
             break;
         case GIT_INSTALL:
             if (atoi_install_opt.install_name == NULL) {

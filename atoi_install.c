@@ -397,7 +397,7 @@ pre_install()
                         // build code from git repository
                         install_mes("Building code into [%s]...\n", atoi_install_opt.build_path);
                         if (install_hook("build_code", NULL) != 0)
-                            extErr("Run hook [build_code] wrong!");
+                            extErr("Run hook [build_code] wrong!\n");
                     }
                     break;
             }
@@ -447,7 +447,7 @@ static long curl_install_step(const char *post)
     install_deb("host: %s\n", host);
     install_deb("ref: %s\n", ref);
     
-    if (post != NULL) install_mes("%s\n", post);
+    if (post != NULL) install_deb("%s\n", post);
     atoi_install_opt.debug = 0;
     CURL *curl = atoi_get_curl(install_url, &headers);
     atoi_install_opt.debug = debug;
@@ -476,10 +476,11 @@ static long curl_install_step(const char *post)
     return http_code;
 }
 
-
 void
 start_install()
 {
+    pre_install();
+    
     char dir_path[256];
     snprintf(dir_path, 255, "%s%s", atoi_install_opt.web_path, atoi_install_opt.install_name);
     DIR* dir = opendir(dir_path);
@@ -494,8 +495,6 @@ start_install()
         extErr("安装文件 [%s] 不存在\n", dir_path);
         /* Directory does not exist. */
     }
-    
-    pre_install();
     
     FILE *sfd = NULL;
     char param[BUF_SIZE];
@@ -530,10 +529,19 @@ start_install()
 
     curl_install_step(NULL);
     int cur_step = 0;
+    long response_code = 0;
+    
     while (getline(&lineptr, &line_len, sfd) > 0) {
         install_mes("Current step [%d]\n", cur_step);
         lineptr[strlen(lineptr) - 1] = '\0';
-        install_mes("Response code: %ld\n", curl_install_step(lineptr));
+        
+        response_code = curl_install_step(lineptr);
+        
+        if (response_code != 200) {
+            install_mes("Params: %s\n", lineptr);
+            extErr("Wrong response code [%ld]\n", response_code);
+        }
+        install_mes("Response code: %ld\n", response_code);
         cur_step++;
     }
     curl_install_step(NULL);

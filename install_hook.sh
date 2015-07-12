@@ -245,9 +245,10 @@ before_install()
 {
     # 修改 PHP 错误日志
     cus_echo "Running hook [before_install]"
+
     cd "${WEB_DIR}${INSTALL_NAME}"
-    cus_echo "composer.phar install..."
-    composer.phar install
+    cus_echo "composer install..."
+    composer install
     cus_echo "Running hook [before_install] finished"
 }
 
@@ -545,11 +546,18 @@ load_avl()
     php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/06-winplan.csv
 }
 
+init()
+{
+    [[ -d "${TMP_DIR}" ]] || mkdir -p "${TMP_DIR}"
+}
+
 test()
 {
     set -x
     cus_echo ""
 }
+
+umask 022
 
 [[ -f ${ATOI_INSTALL_HOOK} ]] && source "${ATOI_INSTALL_HOOK}"
 

@@ -41,7 +41,7 @@ update_cb(const char *refname,
           void *data);
 
 static int
-atpi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload);
+atoi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload);
 
 static int
 atoi_git_repository_clean(git_repository *repo);
@@ -179,22 +179,25 @@ atoi_git_fetchcode(git_remote *remote)
 }
 
 static int
-atpi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload)
+atoi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload)
 {
-    install_mes("Updating submodule: [%s]...\n", name);
     int err = 0;
     // git submodule sync
+    install_deb("sync submodule [%s]...\n", name);
     git_err(git_submodule_sync(sm));
     
     // git submodle update
+    install_mes("Updating submodule: [%s]...\n", name);
     git_err(git_submodule_update(sm, 1, NULL));
-    git_submodule_free(sm);
+    
+//    git_submodule_free(sm);
     return err;
 }
 
 static int
 atoi_git_repository_clean(git_repository *repo)
 {
+    install_deb("Checking the repository if clean...");
     size_t i, maxi;
     git_status_list *status;
     git_status_options statusopt = GIT_STATUS_OPTIONS_INIT;
@@ -292,16 +295,19 @@ atoi_git_checkout_branch(git_repository *repo,
                               (const git_commit*)target_branch_obj, 1));
 
     // checkout new branch
-    install_mes("Checkout to the new branch [%s]\n", install_name);
+    install_mes("Checkout head to the new branch [%s]\n", install_name);
     git_err(git_repository_set_head(repo, git_reference_name(new_branch_ref)));
 
+    install_deb("Checkout tree...");
     git_err(git_checkout_tree(repo,
                               (const git_object*)target_branch_obj,
                               &checkout_opts));
     
     // 需要merge, checkout 时有文件改动未被提交
-    if (atoi_git_repository_clean(repo) != 0)
+    if (atoi_git_repository_clean(repo) != 0) {
+        install_deb("The repository is not clean!\n");
         atoi_git_commit_from_index(repo, "checkout commit");
+    }
     
     if (target_branch_obj != NULL)
         git_object_free(target_branch_obj);
@@ -312,20 +318,27 @@ atoi_git_checkout_branch(git_repository *repo,
 static void
 atoi_git_commit_from_index(git_repository *repo, const char *commit_message)
 {
+    install_deb("git commit...\n");
     git_config    *conf      = NULL;
     git_signature *signature = NULL;
     git_index     *index     = NULL;
     git_tree      *tree      = NULL;
     git_commit    *commit    = NULL;
     git_oid tree_id, new_commit_id, commit_id;
-    const char *commit_user_name  = NULL;
-    const char *commit_user_email = NULL;
     
-    git_err(git_config_open_default(&conf));
-    git_err(git_config_get_string(&commit_user_name, conf, "user.name"));
-    git_err(git_config_get_string(&commit_user_email, conf, "user.name"));
+//    const char *commit_user_name  = NULL;
+//    const char *commit_user_email = NULL;
+//    
+//    install_deb("Open git config file...\n");
+//    git_err(git_config_open_default(&conf));
+//    
+//    install_deb("Get user.name from git config file...\n");
+//    git_err(git_config_get_string(&commit_user_name, conf, "user.name"));
+//    
+//    install_deb("Get user.email from git config file...\n");
+//    git_err(git_config_get_string(&commit_user_email, conf, "user.email"));
     
-    git_err(git_signature_now(&signature, commit_user_name, commit_message));
+    git_err(git_signature_now(&signature, "gbyukg", commit_message));
     git_err(git_repository_index(&index, repo));
     git_err(git_index_write_tree_to(&tree_id, index, repo));
     git_err(git_tree_lookup(&tree, repo, &tree_id));
@@ -540,7 +553,7 @@ void branch_install_prepare_git(void)
 //            git_reference_free(new_branch_ref);
             // update submodule
             install_mes("Update submodule ...\n");
-            git_err(git_submodule_foreach(repo, atpi_git_submodule_foreach_cb, NULL));
+            git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
         } else {
             // merge 其他分支
             atoi_git_merge(repo, refs_name);
@@ -607,7 +620,7 @@ void pull_install_prepare_git(void)
     
     // update submodule
     install_mes("Update submodule ...\n");
-    git_err(git_submodule_foreach(repo, atpi_git_submodule_foreach_cb, NULL));
+    git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
     
     // merge base branch
     atoi_git_merge(repo, head_refs_name);
