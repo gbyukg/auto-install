@@ -121,28 +121,6 @@ atoi_config_lookup_config(config_t *config, int types, const char *key, void *va
 
 static void
 getConfig(struct install_options *opt) {
-    struct config_t config;
-    
-    /*
-     * 初始化
-     * void config_init (config_t * config)
-     */
-    config_init(&config);
-    
-    /*
-     * 从指定的文件中读取配置信息
-     * int config_read_file (config_t * config, const char * filename)
-     *
-     * 以上函数在执行成功后返回: CONFIG_TRUE,
-     * 否则返回: CONFIG_FALSE, 并可通过以下宏获取错误信息
-     *     const char * config_error_text (const config_t * config)
-     *     const char * config_error_file (const config_t * config)
-     *     int config_error_line (const config_t * config)
-     *     上述这些错误宏返回的字符串, 会在执行 config_destroy() 函数后自动被释放, 不能手动释放这些函数.
-     */
-    if (config_read_file(&config, "/document/gbyukg/www/test/newInstall/newInstall/config.cfg") == CONFIG_FALSE)
-        extErr("%s\n", config_error_text(&config));
-    
     const char *git_path            = getenv("ATOI_GIT_PATH");
     const char *build_path          = getenv("ATOI_BUILD_PATH");
     const char *web_path            = getenv("ATOI_WEB_PATH");
@@ -175,6 +153,28 @@ getConfig(struct install_options *opt) {
     const char *fts_port            = getenv("ATOI_FTS_PORT");
     
     const char *atoi_tmp_path       = getenv("ATOI_TMP_PATH");
+    
+    struct config_t config;
+    
+    /*
+     * 初始化
+     * void config_init (config_t * config)
+     */
+    config_init(&config);
+    
+    /*
+     * 从指定的文件中读取配置信息
+     * int config_read_file (config_t * config, const char * filename)
+     *
+     * 以上函数在执行成功后返回: CONFIG_TRUE,
+     * 否则返回: CONFIG_FALSE, 并可通过以下宏获取错误信息
+     *     const char * config_error_text (const config_t * config)
+     *     const char * config_error_file (const config_t * config)
+     *     int config_error_line (const config_t * config)
+     *     上述这些错误宏返回的字符串, 会在执行 config_destroy() 函数后自动被释放, 不能手动释放这些函数.
+     */
+    if (config_read_file(&config, "/document/gbyukg/www/test/newInstall/newInstall/config.cfg") == CONFIG_FALSE)
+        extErr("%s\n", config_error_text(&config));
     
     // install config
     CUS_SYSCALL(atoi_config_lookup_config(&config,
@@ -264,7 +264,6 @@ getConfig(struct install_options *opt) {
                                           ATOI_CON_STRING,
                                           VERSION".atoi_tmp_path",
                                           &atoi_tmp_path));
-
     // install config
     atoi_install_opt.git_path            = strdup(git_path);
     atoi_install_opt.web_path            = strdup(web_path);
@@ -320,7 +319,38 @@ init_install() {
     
     install_deb("Current directory: %s\n", atoi_install_opt.cur_dir);
     
+#ifdef SERVERINSTALL
+    atoi_install_opt.git_path = getenv("ATOI_GIT_PATH");
+    atoi_install_opt.web_path = getenv("ATOI_WEB_PATH");
+    atoi_install_opt.build_path = getenv("ATOI_BUILD_PATH");
+    atoi_install_opt.install_hook_script = getenv("ATOI_INSTALL_HOOK_SCRIPT");
+    atoi_install_opt.init_db_script = getenv("ATOI_INIT_DB_SCRIPT");
+    atoi_install_opt.def_base_user = getenv("ATOI_DEF_BASE_USER");
+    atoi_install_opt.def_head_user = getenv("ATOI_DEF_HEAD_USER");
+
+    atoi_install_opt.sc_license = getenv("ATOI_SC_LICENSE");
+    atoi_install_opt.web_host = getenv("ATOI_WEB_HOST");
+    atoi_install_opt.sc_admin = getenv("ATOI_SC_ADMIN");
+    atoi_install_opt.sc_admin_pwd = getenv("ATOI_SC_ADMIN_PWD");
+
+    atoi_install_opt.dbname  = getenv("DB_NAME");
+    atoi_install_opt.db_port = getenv("DB_PORT");
+    atoi_install_opt.db_host = getenv("DB_HOST");
+    atoi_install_opt.db_admin = getenv("DB_USER");
+    atoi_install_opt.db_admin_pwd = getenv("DB_PASSWORD");
+
+    atoi_install_opt.fts_type = getenv("ATOI_FTS_TYPE");
+    atoi_install_opt.fts_host = getenv("ATOI_FTS_HOST");
+    atoi_install_opt.fts_port = getenv("ATOI_FTS_PORT");
+    
+    atoi_install_opt.tmp_path = getenv("ATOI_TMP_PATH");
+
+    atoi_install_opt.home_dir = getenv("HOME");
+
+#else
     getConfig(&atoi_install_opt);
+#endif
+
     curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -353,6 +383,8 @@ install_usage(void)
 }
 
 // gcc -g `pkg-config --cflags --libs libconfig` -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.22.3/include -L/usr/local/Cellar/libgit2/libgit2-0.22.3/build/ -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c && ./a.out -b 17684
+
+// gcc -g -lconfig -lyajl -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-install -DSERVERINSTALL && ./atoi-install install
 int main(int argc, const char * argv[])
 {
     if (argc < 2) {
