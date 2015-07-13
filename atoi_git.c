@@ -298,7 +298,7 @@ atoi_git_checkout_branch(git_repository *repo,
     install_mes("Checkout head to the new branch [%s]\n", install_name);
     git_err(git_repository_set_head(repo, git_reference_name(new_branch_ref)));
 
-    install_deb("Checkout tree...");
+    install_deb("Checkout tree...\n");
     git_err(git_checkout_tree(repo,
                               (const git_object*)target_branch_obj,
                               &checkout_opts));
@@ -313,6 +313,20 @@ atoi_git_checkout_branch(git_repository *repo,
         git_object_free(target_branch_obj);
 //    if (target_branch_ref != NULL)
 //        git_reference_free(target_branch_ref);
+}
+
+static void
+atoi_git_add_all(git_repository *repo)
+{
+    install_deb("Add all to index...\n");
+    git_index *index;
+//    git_strarray array = {0};
+    
+    git_repository_index(&index, repo);
+    
+    git_index_add_all(index, NULL, 0, NULL, NULL);
+    git_index_write(index);
+    git_index_free(index);
 }
 
 static void
@@ -337,6 +351,8 @@ atoi_git_commit_from_index(git_repository *repo, const char *commit_message)
 //    
 //    install_deb("Get user.email from git config file...\n");
 //    git_err(git_config_get_string(&commit_user_email, conf, "user.email"));
+    
+    atoi_git_add_all(repo);
     
     git_err(git_signature_now(&signature, "gbyukg", commit_message));
     git_err(git_repository_index(&index, repo));
