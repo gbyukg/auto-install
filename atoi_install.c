@@ -227,7 +227,7 @@ void pull_install()
     
     char install_name[64];
     snprintf(install_name, 63, "pull_install_%s", atoi_install_opt.pull_info->pull_number);
-    if (atoi_install_opt.install_name != NULL) {
+    if (atoi_install_opt.install_name == NULL) {
         atoi_install_opt.install_name = strndup(install_name, strlen(install_name));
     }
     install_mes("Install name [%s]\n",
