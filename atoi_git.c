@@ -43,8 +43,8 @@ update_cb(const char *refname,
 static int
 atoi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload);
 
-static int
-atoi_git_repository_clean(git_repository *repo);
+//static int
+//atoi_git_repository_clean(git_repository *repo);
 
 static void
 atoi_git_checkout_branch(git_repository *repo,
@@ -195,54 +195,11 @@ atoi_git_submodule_foreach_cb(git_submodule *sm, const char *name, void *payload
 }
 
 static int
-atoi_git_repository_clean(git_repository *repo)
+atoi_get_git_status_cb(const char *path,
+                   unsigned int status_flags,
+                   void *payload)
 {
-    install_deb("Checking the repository if clean...");
-    size_t i, maxi;
-    git_status_list *status;
-    git_status_options statusopt = GIT_STATUS_OPTIONS_INIT;
-    const git_status_entry *s;
-    int rm_in_workdir = 0, st = 0;
-    
-    statusopt.show  = GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
-    statusopt.flags = GIT_STATUS_OPT_INCLUDE_UNTRACKED |
-    GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX |
-    GIT_STATUS_OPT_SORT_CASE_SENSITIVELY;
-    
-    git_err(git_status_list_new(&status, repo, &statusopt));
-    
-    maxi = git_status_list_entrycount(status);
-    
-    for (i = 0; i < maxi; i++) {
-        char *istatus = NULL;
-        
-        s = git_status_byindex(status, i);
-        
-        if (s->status == GIT_STATUS_CURRENT)
-            continue;
-        
-        if (s->status & GIT_STATUS_WT_DELETED)
-            rm_in_workdir = 1;
-        
-        if (s->status & GIT_STATUS_INDEX_NEW)
-            istatus = "new file: ";
-        if (s->status & GIT_STATUS_INDEX_MODIFIED)
-            istatus = "modified: ";
-        if (s->status & GIT_STATUS_INDEX_DELETED)
-            istatus = "deleted:  ";
-        if (s->status & GIT_STATUS_INDEX_RENAMED)
-            istatus = "renamed:  ";
-        if (s->status & GIT_STATUS_INDEX_TYPECHANGE)
-            istatus = "typechange:";
-        
-        if (istatus == NULL)
-            continue;
-        else
-            st = 1;
-        break;
-    }
-    
-    return st;
+    return status_flags;
 }
 
 static void
@@ -304,15 +261,14 @@ atoi_git_checkout_branch(git_repository *repo,
                               &checkout_opts));
     
     // 需要merge, checkout 时有文件改动未被提交
-    if (atoi_git_repository_clean(repo) != 0) {
-        install_deb("The repository is not clean!\n");
+    if (git_status_foreach(repo, atoi_get_git_status_cb, NULL) != 0) {
+        install_deb("Repository is not clean, need to commit...");
         atoi_git_commit_from_index(repo, "checkout commit");
     }
     
     if (target_branch_obj != NULL)
         git_object_free(target_branch_obj);
-//    if (target_branch_ref != NULL)
-//        git_reference_free(target_branch_ref);
+
 }
 
 static void
