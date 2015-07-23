@@ -387,7 +387,7 @@ install_usage(void)
 
 // gcc -g `pkg-config --cflags --libs libconfig` -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.22.3/include -L/usr/local/Cellar/libgit2/libgit2-0.22.3/build/ -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c && ./a.out -b 17684
 
-// gcc -g -lconfig -lyajl -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-install -DSERVERINSTALL && ./atoi-install install
+// gcc -Wall -g `pkg-config --cflags --libs libconfig` -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.23.0/include -L/usr/local/Cellar/libgit2/libgit2-0.23.0/build/ -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-sc && ./atoi-sc install --pull-install 18985 --debug
 int main(int argc, const char * argv[])
 {
     if (argc < 2) {
