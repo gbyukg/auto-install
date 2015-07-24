@@ -263,22 +263,16 @@ atoi_git_checkout_branch(git_repository *repo,
     // checkout new branch
     install_mes("Checkout head to the new branch [%s]\n", install_name);
     git_err(git_repository_set_head(repo, git_reference_name(new_branch_ref)));
-
-//    install_deb("Checkout tree...\n");
-//    git_err(git_checkout_tree(repo,
-//                              (const git_object*)target_branch_obj,
-//                              &checkout_opts));
     
     install_deb("Checkout to the current head...\n");
     git_err(git_checkout_head(repo, &checkout_opts));
     
-    // update submodule
+    // 更新 submodule
     install_mes("Update submodule ...\n");
     git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
     
     if (target_branch_obj != NULL)
         git_object_free(target_branch_obj);
-
 }
 
 static void
@@ -536,10 +530,13 @@ void branch_install_prepare_git(void)
             // merge 其他分支
             atoi_git_merge(repo, refs_name);
         }
+
         if (remote != NULL)
             git_remote_free(remote);
         bc = bc->next;
     }
+    
+    atoi_git_commit_from_index(repo, "branch install");
     
     if (repo != NULL)
         git_repository_free(repo);
@@ -594,10 +591,6 @@ void pull_install_prepare_git(void)
     // create new branch from head
     git_reference *new_branch_ref = NULL;
     atoi_git_checkout_branch(repo, new_branch_ref, base_refs_name, atoi_install_opt.install_name);
-    
-    // update submodule
-//    install_mes("Update submodule ...\n");
-//    git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
     
     // merge base branch
     atoi_git_merge(repo, head_refs_name);

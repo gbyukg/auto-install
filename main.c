@@ -1,7 +1,7 @@
-#include <libconfig.h>
 #include <getopt.h>
 #include "common.h"
 #include "atoi_install.h"
+#include "iniparser.h"
 
 enum config_type {
     ATOI_CON_STRING = 1,
@@ -45,8 +45,8 @@ getConfig(struct install_options*);
  * @key:    配置文件中的键值
  * @val:    保存获取到的配置文件中的值
  */
-static int
-atoi_config_lookup_config(config_t *config, int types, const char *key, void *val);
+//static int
+//atoi_config_lookup_config(config_t *config, int types, const char *key, void *val);
 
 static void usage(void)
 {
@@ -63,64 +63,98 @@ static void usage(void)
             );
 };
 
-static int
-atoi_config_lookup_config(config_t *config, int types, const char *key, void *val)
+//static int
+//atoi_config_lookup_config(config_t *config, int types, const char *key, void *val)
+//{
+//    atoi_err_mes.code = 0;
+//    int config_return = 0;
+//    
+//    if (*(char**)val != NULL) {
+//        return config_return;
+//    }
+//    
+//    switch (types) {
+//        case ATOI_CON_STRING:
+//            config_return = config_lookup_string(config, key, (const char **)val);
+//            break;
+//        case STOI_CON_INT:
+//            config_return = config_lookup_int(config, key, (int *)val);
+//            break;
+//        case STOI_CON_INT64:
+//            config_return = config_lookup_int64(config, key, (long long *)val);
+//            break;
+//        case STOI_CON_FLOAT:
+//            config_return = config_lookup_float(config, key, (double *)val);
+//            break;
+//        case STOI_CON_BOOL:
+//            config_return = config_lookup_bool(config, key, (int *)val);
+//            break;
+//        default:
+//            atoi_err_mes.code = -1;
+//            snprintf(atoi_err_mes.err_mes, 127, "Can not read type [%d] from config file.", types);
+//            return atoi_err_mes.code;
+//            break;
+//    }
+//    
+//    if (config_return == CONFIG_FALSE) {
+//        switch (config_error_type(config)) {
+//            case CONFIG_ERR_NONE:
+//                atoi_err_mes.code = -1;
+//                snprintf(atoi_err_mes.err_mes, 127, "Can not found node [%s] from config file.", key);
+//                break;
+//            case CONFIG_ERR_FILE_IO:
+//                atoi_err_mes.code = -1;
+//                snprintf(atoi_err_mes.err_mes, 127, "config err file io.");
+//                break;
+//            case CONFIG_ERR_PARSE:
+//                atoi_err_mes.code = -1;
+//                snprintf(atoi_err_mes.err_mes, 127, "config err parse.");
+//                break;
+//            default:
+//                atoi_err_mes.code = -1;
+//                snprintf(atoi_err_mes.err_mes, 127, "Unknow config error.");
+//                break;
+//        }
+//    }
+//    return atoi_err_mes.code;
+//}
+
+static const
+char *atoi_iniparser_getstring(dictionary *ini, const char *key, const char *def_val)
 {
-    atoi_err_mes.code = 0;
-    int config_return = 0;
-    
-    if (*(char**)val != NULL) {
-        return config_return;
+    if (def_val != NULL) {
+        return strdup(def_val);
     }
+    char final_key[256] = VERSION ":";
+    strncat(final_key, key, 200);
     
-    switch (types) {
-        case ATOI_CON_STRING:
-            config_return = config_lookup_string(config, key, (const char **)val);
-            break;
-        case STOI_CON_INT:
-            config_return = config_lookup_int(config, key, (int *)val);
-            break;
-        case STOI_CON_INT64:
-            config_return = config_lookup_int64(config, key, (long long *)val);
-            break;
-        case STOI_CON_FLOAT:
-            config_return = config_lookup_float(config, key, (double *)val);
-            break;
-        case STOI_CON_BOOL:
-            config_return = config_lookup_bool(config, key, (int *)val);
-            break;
-        default:
-            atoi_err_mes.code = -1;
-            snprintf(atoi_err_mes.err_mes, 127, "Can not read type [%d] from config file.", types);
-            return atoi_err_mes.code;
-            break;
-    }
-    
-    if (config_return == CONFIG_FALSE) {
-        switch (config_error_type(config)) {
-            case CONFIG_ERR_NONE:
-                atoi_err_mes.code = -1;
-                snprintf(atoi_err_mes.err_mes, 127, "Can not found node [%s] from config file.", key);
-                break;
-            case CONFIG_ERR_FILE_IO:
-                atoi_err_mes.code = -1;
-                snprintf(atoi_err_mes.err_mes, 127, "config err file io.");
-                break;
-            case CONFIG_ERR_PARSE:
-                atoi_err_mes.code = -1;
-                snprintf(atoi_err_mes.err_mes, 127, "config err parse.");
-                break;
-            default:
-                atoi_err_mes.code = -1;
-                snprintf(atoi_err_mes.err_mes, 127, "Unknow config error.");
-                break;
-        }
-    }
-    return atoi_err_mes.code;
+    return strdup(iniparser_getstring(ini, final_key, def_val));
 }
 
 static void
 getConfig(struct install_options *opt) {
+    dictionary *ini ;
+    
+    // 读取 HOME 环境变量, 赋值给 home_dir
+    const char *home_dir = NULL;
+    if ((home_dir = getenv("HOME")) != NULL) {
+        atoi_install_opt.home_dir = strdup(getenv("HOME"));
+    } else {
+        extErr("get home dir wrong! [getenv(\"HOME\")]\n");
+    }
+    
+    // 读取配置文件
+    const char *ini_name = NULL;
+    if ((ini_name = getenv("ATOI_CONFIG_PATH")) == NULL)
+        extErr("Config file path is NULL!");
+
+//    const char *ini_name = "/document/gbyukg/www/test/newInstall/newInstall/config.ini";
+    if ((ini = iniparser_load(ini_name)) == NULL)
+        extErr("Cannot parse file: %s\n", ini_name);
+    
+    iniparser_dump(ini, stderr);
+
+    
     const char *git_path            = getenv("ATOI_GIT_PATH");
     const char *build_path          = getenv("ATOI_BUILD_PATH");
     const char *web_path            = getenv("ATOI_WEB_PATH");
@@ -135,7 +169,7 @@ getConfig(struct install_options *opt) {
     const char *sc_admin_pwd        = getenv("ATOI_SC_ADMIN_PWD");
     
 #ifdef SERVERINSTALL
-    const char *dbname              = getenv("");
+    const char *dbname              = getenv("BUILD_NUMBER");
     const char *db_port             = getenv("DB_PORT");
     const char *db_host             = getenv("DB_HOST");
     const char *db_admin            = getenv("DB_USER");
@@ -154,158 +188,36 @@ getConfig(struct install_options *opt) {
     
     const char *atoi_tmp_path       = getenv("ATOI_TMP_PATH");
     
-    struct config_t config;
+    atoi_install_opt.git_path            = atoi_iniparser_getstring(ini, "atoi_git_path", git_path);
+    atoi_install_opt.web_path            = atoi_iniparser_getstring(ini, "atoi_web_path", web_path);
+    atoi_install_opt.build_path          = atoi_iniparser_getstring(ini, "atoi_build_path", build_path);
+    atoi_install_opt.install_hook_script = atoi_iniparser_getstring(ini, "atoi_install_hook_script", install_hook_script);
+    atoi_install_opt.init_db_script      = atoi_iniparser_getstring(ini, "atoi_init_db_script", init_db_script);
+    atoi_install_opt.def_base_user       = atoi_iniparser_getstring(ini, "atoi_def_base_user", def_base_user);
+    atoi_install_opt.def_head_user       = atoi_iniparser_getstring(ini, "atoi_def_head_user", def_head_user);
     
-    /*
-     * 初始化
-     * void config_init (config_t * config)
-     */
-    config_init(&config);
+    // sc config
+    atoi_install_opt.sc_license          = atoi_iniparser_getstring(ini, "atoi_sc_license", sc_license);
+    atoi_install_opt.web_host            = atoi_iniparser_getstring(ini, "atoi_web_host", web_host);
+    atoi_install_opt.sc_admin            = atoi_iniparser_getstring(ini, "atoi_sc_admin", sc_admin);
+    atoi_install_opt.sc_admin_pwd        = atoi_iniparser_getstring(ini, "atoi_sc_admin_pwd", sc_admin_pwd);
     
-    /*
-     * 从指定的文件中读取配置信息
-     * int config_read_file (config_t * config, const char * filename)
-     *
-     * 以上函数在执行成功后返回: CONFIG_TRUE,
-     * 否则返回: CONFIG_FALSE, 并可通过以下宏获取错误信息
-     *     const char * config_error_text (const config_t * config)
-     *     const char * config_error_file (const config_t * config)
-     *     int config_error_line (const config_t * config)
-     *     上述这些错误宏返回的字符串, 会在执行 config_destroy() 函数后自动被释放, 不能手动释放这些函数.
-     */
-    if (config_read_file(&config, "/document/gbyukg/www/test/newInstall/newInstall/config.cfg") == CONFIG_FALSE)
-        extErr("%s\n", config_error_text(&config));
+    // db config
+    atoi_install_opt.dbname              = atoi_iniparser_getstring(ini, "atoi_db_name", dbname);
+    atoi_install_opt.db_port             = atoi_iniparser_getstring(ini, "atoi_db_port", db_port);
+    atoi_install_opt.db_host             = atoi_iniparser_getstring(ini, "atoi_db_host", db_host);
+    atoi_install_opt.db_admin            = atoi_iniparser_getstring(ini, "atoi_db_admin", db_admin);
+    atoi_install_opt.db_admin_pwd        = atoi_iniparser_getstring(ini, "atoi_db_admin_pwd", db_admin_pwd);
     
-    // install config
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION ".atoi_git_path",
-                                          &git_path));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_web_path",
-                                          &web_path));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_build_path",
-                                          &build_path));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_install_hook_script",
-                                          &install_hook_script));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_init_db_script",
-                                          &init_db_script));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_def_base_user",
-                                          &def_base_user));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_def_head_user",
-                                          &def_head_user));
+    // fts config
+    atoi_install_opt.fts_type            = atoi_iniparser_getstring(ini, "atoi_fts_type", fts_type);
+    atoi_install_opt.fts_host            = atoi_iniparser_getstring(ini, "atoi_fts_host", fts_host);
+    atoi_install_opt.fts_port            = atoi_iniparser_getstring(ini, "atoi_fts_port", fts_port);
+    
+    atoi_install_opt.tmp_path            = atoi_iniparser_getstring(ini, "atoi_tmp_path", atoi_tmp_path);
 
-    // db config
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_default_dbname",
-                                          &dbname));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_db_port",
-                                          &db_port));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_db_host",
-                                          &db_host));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_db_admin",
-                                          &db_admin));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_db_admin_pwd",
-                                          &db_admin_pwd));
-    
-    // fts config
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_fts_type",
-                                          &fts_type));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_fts_host",
-                                          &fts_host));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_fts_port",
-                                          &fts_port));
-    
-    // sc config
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_sc_license",
-                                          &sc_license));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_web_host",
-                                          &web_host));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_sc_admin",
-                                          &sc_admin));
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_sc_admin_pwd",
-                                          &sc_admin_pwd));
-    
-    CUS_SYSCALL(atoi_config_lookup_config(&config,
-                                          ATOI_CON_STRING,
-                                          VERSION".atoi_tmp_path",
-                                          &atoi_tmp_path));
-    // install config
-    atoi_install_opt.git_path            = strdup(git_path);
-    atoi_install_opt.web_path            = strdup(web_path);
-    atoi_install_opt.build_path          = strdup(build_path);
-    atoi_install_opt.install_hook_script = strdup(install_hook_script);
-    atoi_install_opt.init_db_script      = strdup(init_db_script);
-    atoi_install_opt.def_base_user       = strdup(def_base_user);
-    atoi_install_opt.def_head_user       = strdup(def_head_user);
-    
-    // sc config
-    atoi_install_opt.sc_license = strdup(sc_license);
-    atoi_install_opt.web_host = strdup(web_host);
-    atoi_install_opt.sc_admin = strdup(sc_admin);
-    atoi_install_opt.sc_admin_pwd = strdup(sc_admin_pwd);
-    
-    // db config
-    atoi_install_opt.dbname  = strdup(dbname);
-    atoi_install_opt.db_port = strdup(db_port);
-    atoi_install_opt.db_host = strdup(db_host);
-    atoi_install_opt.db_admin = strdup(db_admin);
-    atoi_install_opt.db_admin_pwd = strdup(db_admin_pwd);
-    
-    // fts config
-    atoi_install_opt.fts_type = strdup(fts_type);
-    atoi_install_opt.fts_host = strdup(fts_host);
-    atoi_install_opt.fts_port = strdup(fts_port);
-    
-    atoi_install_opt.tmp_path = strdup(atoi_tmp_path);
-    
-    const char *home_dir = NULL;
-    if ((home_dir = getenv("HOME")) != NULL) {
-        atoi_install_opt.home_dir = strdup(getenv("HOME"));
-    } else {
-        extErr("get home dir wrong! [getenv(\"HOME\")]\n");
-    }
-    
-    /*
-     * 清除
-     * void config_init (config_t * config)
-     * 会释放为字符串分配的内存空间
-     */
-    config_destroy(&config);
+    // 释放资源
+    iniparser_freedict(ini);
 }
 
 static void
@@ -318,38 +230,9 @@ init_install() {
         extErr("获取程序当前执行路径失败: %s.\n", strerror(errno));
     
     install_deb("Current directory: %s\n", atoi_install_opt.cur_dir);
-    
-#ifdef SERVERINSTALL
-    atoi_install_opt.git_path = getenv("ATOI_GIT_PATH");
-    atoi_install_opt.web_path = getenv("ATOI_WEB_PATH");
-    atoi_install_opt.build_path = getenv("ATOI_BUILD_PATH");
-    atoi_install_opt.install_hook_script = getenv("ATOI_INSTALL_HOOK_SCRIPT");
-    atoi_install_opt.init_db_script = getenv("ATOI_INIT_DB_SCRIPT");
-    atoi_install_opt.def_base_user = getenv("ATOI_DEF_BASE_USER");
-    atoi_install_opt.def_head_user = getenv("ATOI_DEF_HEAD_USER");
 
-    atoi_install_opt.sc_license = getenv("ATOI_SC_LICENSE");
-    atoi_install_opt.web_host = getenv("ATOI_WEB_HOST");
-    atoi_install_opt.sc_admin = getenv("ATOI_SC_ADMIN");
-    atoi_install_opt.sc_admin_pwd = getenv("ATOI_SC_ADMIN_PWD");
-
-    atoi_install_opt.dbname  = getenv("DB_NAME");
-    atoi_install_opt.db_port = getenv("DB_PORT");
-    atoi_install_opt.db_host = getenv("DB_HOST");
-    atoi_install_opt.db_admin = getenv("DB_USER");
-    atoi_install_opt.db_admin_pwd = getenv("DB_PASSWORD");
-
-    atoi_install_opt.fts_type = getenv("ATOI_FTS_TYPE");
-    atoi_install_opt.fts_host = getenv("ATOI_FTS_HOST");
-    atoi_install_opt.fts_port = getenv("ATOI_FTS_PORT");
-    
-    atoi_install_opt.tmp_path = getenv("ATOI_TMP_PATH");
-
-    atoi_install_opt.home_dir = getenv("HOME");
-
-#else
+    // 读取配置文件信息
     getConfig(&atoi_install_opt);
-#endif
     
     if (install_hook("init", NULL) != 0)
         extErr("Run hook [init] wrong!\n");
@@ -388,6 +271,8 @@ install_usage(void)
 // gcc -g `pkg-config --cflags --libs libconfig` -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.22.3/include -L/usr/local/Cellar/libgit2/libgit2-0.22.3/build/ -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c && ./a.out -b 17684
 
 // gcc -Wall -g `pkg-config --cflags --libs libconfig` -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.23.0/include -L/usr/local/Cellar/libgit2/libgit2-0.23.0/build/ -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-sc && ./atoi-sc install --pull-install 18985 --debug
+
+// gcc -Wall -g  -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.23.0/include -L/usr/local/Cellar/libgit2/libgit2-0.23.0/build/ -lgit2 common.c dictionary.c iniparser.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-sc && ./atoi-sc install --pull-install 18985 --debug
 int main(int argc, const char * argv[])
 {
     if (argc < 2) {
@@ -510,7 +395,7 @@ int main(int argc, const char * argv[])
                 free(relast);
                 relast = relast_next;
             }
-            free(atoi_install_opt.install_name);
+            free((void *)atoi_install_opt.install_name);
             break;
         case PULL_INSTALL:
             pull_install();
@@ -543,20 +428,20 @@ int main(int argc, const char * argv[])
                         install_mes("Install from current git repository branch [%s]\n",
                                     atoi_install_opt.install_name);
             start_install();
-            free(atoi_install_opt.install_name);
+            free((void *)atoi_install_opt.install_name);
             break;
         case WEB_DIR_INSTALL:
             // check dir exist
             
             start_install();
-            free(atoi_install_opt.install_name);
+            free((void *)atoi_install_opt.install_name);
             break;
         case PACKAGE_INSTALL:
             // install from package
             package_install(atoi_install_opt.package_info);
             
-            free(atoi_install_opt.package_info);
-            free(atoi_install_opt.install_name);
+            free((void *)atoi_install_opt.package_info);
+            free((void *)atoi_install_opt.install_name);
             break;
         default:
             usage();
@@ -564,14 +449,14 @@ int main(int argc, const char * argv[])
             break;
     }
 
-    free(atoi_install_opt.dbname);
-    free(atoi_install_opt.git_path);
-    free(atoi_install_opt.web_path);
-    free(atoi_install_opt.build_path);
-    free(atoi_install_opt.def_base_user);
-    free(atoi_install_opt.def_head_user);
-    free(atoi_install_opt.cur_dir);
-    free(atoi_install_opt.home_dir);
+    free((void *)atoi_install_opt.dbname);
+    free((void *)atoi_install_opt.git_path);
+    free((void *)atoi_install_opt.web_path);
+    free((void *)atoi_install_opt.build_path);
+    free((void *)atoi_install_opt.def_base_user);
+    free((void *)atoi_install_opt.def_head_user);
+    free((void *)atoi_install_opt.cur_dir);
+    free((void *)atoi_install_opt.home_dir);
 
     return 0;
 }

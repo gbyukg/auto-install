@@ -170,36 +170,37 @@ struct install_options {
     int unittest;       // 执行PHP unit test
     int build_code_or_not;     //
     int init_db_or_not;        //
-    char *install_hook_script;
-    char *init_db_script;
-    char *install_name; // install name
-    char *git_path;     // git 路径
-    char *web_path;     // web 路径
-    char *build_path;   // build 路径
-    char *def_base_user;// sugareps
-    char *def_head_user;// gbyukg
     char *cur_dir;      // 当前程序执行路径
-    char *home_dir;     // home
-    char *dataloader_dir;
+    const char *install_hook_script;
+    char *install_name; // install name
+    const char *init_db_script;
     
-    char *sc_license;
-    char *web_host;     // http://localhost
-    char *sc_admin;
-    char *sc_admin_pwd;
+    const char *git_path;     // git 路径
+    const char *web_path;     // web 路径
+    const char *build_path;   // build 路径
+    const char *def_base_user;// sugareps
+    const char *def_head_user;// gbyukg
+    const char *home_dir;     // home
+    const char *dataloader_dir;
     
-    char *dbname;       // 安装时使用的数据库名, 最大长度31个字节
-    char *db_port;
-    char *db_host;
-    char *db_admin;
-    char *db_admin_pwd;
+    const char *sc_license;
+    const char *web_host;     // http://localhost
+    const char *sc_admin;
+    const char *sc_admin_pwd;
     
-    char *fts_type;
-    char *fts_host;
-    char *fts_port;
+    const char *dbname;       // 安装时使用的数据库名, 最大长度31个字节
+    const char *db_port;
+    const char *db_host;
+    const char *db_admin;
+    const char *db_admin_pwd;
     
-    char *tmp_path;
+    const char *fts_type;
+    const char *fts_host;
+    const char *fts_port;
     
-    char git_token[64]; // github token
+    const char *tmp_path;
+    
+    const char git_token[64]; // github token
     union {
         _atoi_pull_info_ *atoi_pull_info;
         _atoi_branch_info_ *atoi_branch_info;
