@@ -56,7 +56,7 @@ shell_call(int n, const char *command, ...)
 
     switch (childPid = fork()) {
         case -1:
-            extErr("Fork wrong when exclude %s\n", com);
+            extErr("Fork wrong when exclude %s", com);
             break;
         case 0:
             execlp("sh", "sh", "-c", com, (char *)0);

@@ -3,7 +3,8 @@
 #include "atoi_install.h"
 #include "iniparser.h"
 
-enum config_type {
+enum config_type
+{
     ATOI_CON_STRING = 1,
     STOI_CON_INT,
     STOI_CON_INT64,
@@ -12,7 +13,8 @@ enum config_type {
 };
 
 _atoi_err_mes atoi_err_mes;
-struct install_options atoi_install_opt = {
+struct install_options atoi_install_opt =
+{
     .install_method = 0,
     .debug = 0,
     .dataloader = 1,
@@ -22,6 +24,11 @@ struct install_options atoi_install_opt = {
     .init_db_or_not = 1,
     .cp_dataloader = 0,
 };
+
+//extern FILE *log_file;
+
+static void
+open_log();
 
 /*
  * 系统初始化
@@ -60,89 +67,38 @@ static void usage(void)
             "  --webpath                WEB 路径.\n"
             "  -?|-h|--help             This information.\n"
             "  -V|--version             Display program version.\n"
-            );
+           );
 };
-
-//static int
-//atoi_config_lookup_config(config_t *config, int types, const char *key, void *val)
-//{
-//    atoi_err_mes.code = 0;
-//    int config_return = 0;
-//    
-//    if (*(char**)val != NULL) {
-//        return config_return;
-//    }
-//    
-//    switch (types) {
-//        case ATOI_CON_STRING:
-//            config_return = config_lookup_string(config, key, (const char **)val);
-//            break;
-//        case STOI_CON_INT:
-//            config_return = config_lookup_int(config, key, (int *)val);
-//            break;
-//        case STOI_CON_INT64:
-//            config_return = config_lookup_int64(config, key, (long long *)val);
-//            break;
-//        case STOI_CON_FLOAT:
-//            config_return = config_lookup_float(config, key, (double *)val);
-//            break;
-//        case STOI_CON_BOOL:
-//            config_return = config_lookup_bool(config, key, (int *)val);
-//            break;
-//        default:
-//            atoi_err_mes.code = -1;
-//            snprintf(atoi_err_mes.err_mes, 127, "Can not read type [%d] from config file.", types);
-//            return atoi_err_mes.code;
-//            break;
-//    }
-//    
-//    if (config_return == CONFIG_FALSE) {
-//        switch (config_error_type(config)) {
-//            case CONFIG_ERR_NONE:
-//                atoi_err_mes.code = -1;
-//                snprintf(atoi_err_mes.err_mes, 127, "Can not found node [%s] from config file.", key);
-//                break;
-//            case CONFIG_ERR_FILE_IO:
-//                atoi_err_mes.code = -1;
-//                snprintf(atoi_err_mes.err_mes, 127, "config err file io.");
-//                break;
-//            case CONFIG_ERR_PARSE:
-//                atoi_err_mes.code = -1;
-//                snprintf(atoi_err_mes.err_mes, 127, "config err parse.");
-//                break;
-//            default:
-//                atoi_err_mes.code = -1;
-//                snprintf(atoi_err_mes.err_mes, 127, "Unknow config error.");
-//                break;
-//        }
-//    }
-//    return atoi_err_mes.code;
-//}
 
 static const
 char *atoi_iniparser_getstring(dictionary *ini, const char *key, const char *def_val)
 {
-    if (def_val != NULL) {
+    if (def_val != NULL)
+    {
         return strdup(def_val);
     }
     char final_key[256] = VERSION ":";
     strncat(final_key, key, 200);
-    
+
     return strdup(iniparser_getstring(ini, final_key, def_val));
 }
 
 static void
-getConfig(struct install_options *opt) {
+getConfig(struct install_options *opt)
+{
     dictionary *ini ;
-    
+
     // 读取 HOME 环境变量, 赋值给 home_dir
     const char *home_dir = NULL;
-    if ((home_dir = getenv("HOME")) != NULL) {
+    if ((home_dir = getenv("HOME")) != NULL)
+    {
         atoi_install_opt.home_dir = strdup(getenv("HOME"));
-    } else {
-        extErr("get home dir wrong! [getenv(\"HOME\")]\n");
     }
-    
+    else
+    {
+        extErr("get home dir wrong! [getenv(\"HOME\")]");
+    }
+
     // 读取配置文件
     const char *ini_name = NULL;
     if ((ini_name = getenv("ATOI_CONFIG_PATH")) == NULL)
@@ -150,11 +106,13 @@ getConfig(struct install_options *opt) {
 
 //    const char *ini_name = "/document/gbyukg/www/test/newInstall/newInstall/config.ini";
     if ((ini = iniparser_load(ini_name)) == NULL)
-        extErr("Cannot parse file: %s\n", ini_name);
-    
-    iniparser_dump(ini, stderr);
+        extErr("Cannot parse file: %s", ini_name);
 
-    
+    if (atoi_install_opt.debug == 1)
+    {
+        iniparser_dump(ini, stderr);
+    }
+
     const char *git_path            = getenv("ATOI_GIT_PATH");
     const char *build_path          = getenv("ATOI_BUILD_PATH");
     const char *web_path            = getenv("ATOI_WEB_PATH");
@@ -162,12 +120,12 @@ getConfig(struct install_options *opt) {
     const char *init_db_script      = getenv("ATOI_INIT_DB_SCRIPT");
     const char *def_base_user       = NULL;
     const char *def_head_user       = NULL;
-    
+
     const char *sc_license          = getenv("ATOI_SC_LICENSE");
     const char *web_host            = getenv("ATOI_WEB_HOST");
     const char *sc_admin            = getenv("ATOI_SC_ADMIN");
     const char *sc_admin_pwd        = getenv("ATOI_SC_ADMIN_PWD");
-    
+
 #ifdef SERVERINSTALL
     const char *dbname              = getenv("BUILD_NUMBER");
     const char *db_port             = getenv("DB_PORT");
@@ -181,13 +139,13 @@ getConfig(struct install_options *opt) {
     const char *db_admin            = getenv("ATOI_DB_ADMIN");
     const char *db_admin_pwd        = getenv("ATOI_DB_ADMIN_PWD");
 #endif
-    
+
     const char *fts_type            = getenv("ATOI_FTS_TYPE");
     const char *fts_host            = getenv("ATOI_FTS_HOST");
     const char *fts_port            = getenv("ATOI_FTS_PORT");
-    
+
     const char *atoi_tmp_path       = getenv("ATOI_TMP_PATH");
-    
+
     atoi_install_opt.git_path            = atoi_iniparser_getstring(ini, "atoi_git_path", git_path);
     atoi_install_opt.web_path            = atoi_iniparser_getstring(ini, "atoi_web_path", web_path);
     atoi_install_opt.build_path          = atoi_iniparser_getstring(ini, "atoi_build_path", build_path);
@@ -195,25 +153,25 @@ getConfig(struct install_options *opt) {
     atoi_install_opt.init_db_script      = atoi_iniparser_getstring(ini, "atoi_init_db_script", init_db_script);
     atoi_install_opt.def_base_user       = atoi_iniparser_getstring(ini, "atoi_def_base_user", def_base_user);
     atoi_install_opt.def_head_user       = atoi_iniparser_getstring(ini, "atoi_def_head_user", def_head_user);
-    
+
     // sc config
     atoi_install_opt.sc_license          = atoi_iniparser_getstring(ini, "atoi_sc_license", sc_license);
     atoi_install_opt.web_host            = atoi_iniparser_getstring(ini, "atoi_web_host", web_host);
     atoi_install_opt.sc_admin            = atoi_iniparser_getstring(ini, "atoi_sc_admin", sc_admin);
     atoi_install_opt.sc_admin_pwd        = atoi_iniparser_getstring(ini, "atoi_sc_admin_pwd", sc_admin_pwd);
-    
+
     // db config
     atoi_install_opt.dbname              = atoi_iniparser_getstring(ini, "atoi_db_name", dbname);
     atoi_install_opt.db_port             = atoi_iniparser_getstring(ini, "atoi_db_port", db_port);
     atoi_install_opt.db_host             = atoi_iniparser_getstring(ini, "atoi_db_host", db_host);
     atoi_install_opt.db_admin            = atoi_iniparser_getstring(ini, "atoi_db_admin", db_admin);
     atoi_install_opt.db_admin_pwd        = atoi_iniparser_getstring(ini, "atoi_db_admin_pwd", db_admin_pwd);
-    
+
     // fts config
     atoi_install_opt.fts_type            = atoi_iniparser_getstring(ini, "atoi_fts_type", fts_type);
     atoi_install_opt.fts_host            = atoi_iniparser_getstring(ini, "atoi_fts_host", fts_host);
     atoi_install_opt.fts_port            = atoi_iniparser_getstring(ini, "atoi_fts_port", fts_port);
-    
+
     atoi_install_opt.tmp_path            = atoi_iniparser_getstring(ini, "atoi_tmp_path", atoi_tmp_path);
 
     // 释放资源
@@ -221,21 +179,36 @@ getConfig(struct install_options *opt) {
 }
 
 static void
-init_install() {
+open_log()
+{
+    char log_file_name[256];
+    snprintf(log_file_name, 255, "/tmp/%d", getpid());
+
+    if ((log_file = fopen(log_file_name, "w+")) == NULL) {
+        perror("fone wrong!");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void
+init_install()
+{
+    open_log();
+    
     install_deb("init install ...\n");
     int len = sizeof(char) * 1024;
     atoi_install_opt.cur_dir = atoi_malloc(len);
 
     if (getcwd(atoi_install_opt.cur_dir, len) == NULL)
-        extErr("获取程序当前执行路径失败: %s.\n", strerror(errno));
-    
+        extErr("获取程序当前执行路径失败: %s.", strerror(errno));
+
     install_deb("Current directory: %s\n", atoi_install_opt.cur_dir);
 
     // 读取配置文件信息
     getConfig(&atoi_install_opt);
-    
+
     if (install_hook("init", NULL) != 0)
-        extErr("Run hook [init] wrong!\n");
+        extErr("Run hook [init] wrong!");
 
     curl_global_init(CURL_GLOBAL_ALL);
 }
@@ -265,7 +238,7 @@ install_usage(void)
             "  --no-unit                            安装完成后不执行 unit test(默认).\n"
             "  --debug                              开启 debug 模式.\n"
             "  -h|--help                            帮助信息.\n"
-            );
+           );
 }
 
 // gcc -g `pkg-config --cflags --libs libconfig` -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.22.3/include -L/usr/local/Cellar/libgit2/libgit2-0.22.3/build/ -lgit2 common.c atoi_curl.c atoi_install.c atoi_git.c main.c && ./a.out -b 17684
@@ -275,16 +248,18 @@ install_usage(void)
 // gcc -Wall -g  -lcurl -lyajl -I/usr/local/Cellar/libgit2/libgit2-0.23.0/include -L/usr/local/Cellar/libgit2/libgit2-0.23.0/build/ -lgit2 common.c dictionary.c iniparser.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-sc && ./atoi-sc install --pull-install 18985 --debug
 int main(int argc, const char * argv[])
 {
-    if (argc < 2) {
+    if (argc < 2)
+    {
         usage();
         exit(1);
     }
-    
+
     // 系统初始化
     init_install();
 
     int i = 1;
-    if (strcmp("install", argv[i]) == 0) {
+    if (strcmp("install", argv[i]) == 0)
+    {
         struct option long_options[] =
         {
             {"pull-install",        required_argument, 0, 'p'},
@@ -313,140 +288,154 @@ int main(int argc, const char * argv[])
         };
         char *const short_opt = "p:P:b:w:gd:hn:";
         int opt, indexptr;
-        
-        while ((opt = getopt_long(argc, (char *const*)argv, short_opt, long_options, &indexptr)) != -1) {
-            switch (opt) {
-                case 'p':
-                    if (atoi_install_opt.install_method)
-                        break;
-                    atoi_install_opt.install_method = PULL_INSTALL;
-                    atoi_install_opt.pull_info = (_atoi_pull_info_*)atoi_malloc(sizeof(_atoi_pull_info_));
-                    atoi_install_opt.pull_info->pull_number = strndup(optarg, strlen(optarg));
+
+        while ((opt = getopt_long(argc, (char *const*)argv, short_opt, long_options, &indexptr)) != -1)
+        {
+            switch (opt)
+            {
+            case 'p':
+                if (atoi_install_opt.install_method)
                     break;
-                case 'b':
-                    if (atoi_install_opt.install_method)
-                        break;
-                    atoi_install_opt.install_method = BRANCH_INSTALL;
-                    install_deb("Analyse branch info: [%s]\n", optarg);
-                    SYSCALL(analyse_branch(optarg));
+                atoi_install_opt.install_method = PULL_INSTALL;
+                atoi_install_opt.pull_info = (_atoi_pull_info_*)atoi_malloc(sizeof(_atoi_pull_info_));
+                atoi_install_opt.pull_info->pull_number = strndup(optarg, strlen(optarg));
+                break;
+            case 'b':
+                if (atoi_install_opt.install_method)
                     break;
-                case 'g':
-                    if (atoi_install_opt.install_method)
-                        break;
-                    atoi_install_opt.install_method = GIT_INSTALL;
+                atoi_install_opt.install_method = BRANCH_INSTALL;
+                install_deb("Analyse branch info: [%s]\n", optarg);
+                SYSCALL(analyse_branch(optarg));
+                break;
+            case 'g':
+                if (atoi_install_opt.install_method)
                     break;
-                case 'w':
-                    if (atoi_install_opt.install_method)
-                        break;
-                    atoi_install_opt.install_method = WEB_DIR_INSTALL;
-                    atoi_install_opt.build_code_or_not = 0;
-                    atoi_install_opt.install_name = strndup(optarg, strlen(optarg));
+                atoi_install_opt.install_method = GIT_INSTALL;
+                break;
+            case 'w':
+                if (atoi_install_opt.install_method)
                     break;
-                case 'P':
-                    if (atoi_install_opt.install_method)
-                        break;
-                    atoi_install_opt.install_method = PACKAGE_INSTALL;
-                    atoi_install_opt.package_info = strndup(optarg, strlen(optarg));
+                atoi_install_opt.install_method = WEB_DIR_INSTALL;
+                atoi_install_opt.build_code_or_not = 0;
+                atoi_install_opt.install_name = strndup(optarg, strlen(optarg));
+                break;
+            case 'P':
+                if (atoi_install_opt.install_method)
                     break;
-                case 'c':
-                    
-                    break;
-                case 'd':
-                    atoi_install_opt.dbname = strdup(optarg);
-                    break;
-                case 'n':
-                    atoi_install_opt.install_name = strdup(optarg);
-                    break;
-                case 'h':
-                case '?':
-                    install_usage();
-                    exit(0);
-                    break;
-                default:
-                    break;
+                atoi_install_opt.install_method = PACKAGE_INSTALL;
+                atoi_install_opt.package_info = strndup(optarg, strlen(optarg));
+                break;
+            case 'c':
+
+                break;
+            case 'd':
+                atoi_install_opt.dbname = strdup(optarg);
+                break;
+            case 'n':
+                atoi_install_opt.install_name = strdup(optarg);
+                break;
+            case 'h':
+            case '?':
+                install_usage();
+                exit(0);
+                break;
+            default:
+                break;
             }
         }
-        
-        if (!atoi_install_opt.install_method) {
+
+        if (!atoi_install_opt.install_method)
+        {
             install_usage();
             exit(-1);
         }
-        
-    } else if (strcmp("repair", argv[i]) == 0) {
-        
-    } else if (strcmp("create-pr", argv[i]) == 0) {
-        
-    } else if (strcmp("format-js", argv[i]) == 0) {
-        
-    } else {
+
+    }
+    else if (strcmp("repair", argv[i]) == 0)
+    {
+
+    }
+    else if (strcmp("create-pr", argv[i]) == 0)
+    {
+
+    }
+    else if (strcmp("format-js", argv[i]) == 0)
+    {
+
+    }
+    else
+    {
         usage();
         abort();
     }
-    
-    switch (atoi_install_opt.install_method) {
-        case BRANCH_INSTALL:
-            branch_install();
-            
-            // 资源释放
-            _atoi_branch_info_ *relast = atoi_install_opt.branch_info;
-            while (relast != NULL) {
-                install_deb("Free branch source...\n");
-                _atoi_branch_info_ *relast_next = relast->next;
-                free(relast);
-                relast = relast_next;
-            }
-            free((void *)atoi_install_opt.install_name);
-            break;
-        case PULL_INSTALL:
-            pull_install();
+
+    switch (atoi_install_opt.install_method)
+    {
+    case BRANCH_INSTALL:
+        branch_install();
+
+        // 资源释放
+        _atoi_branch_info_ *relast = atoi_install_opt.branch_info;
+        while (relast != NULL)
+        {
+            install_deb("Free branch source...\n");
+            _atoi_branch_info_ *relast_next = relast->next;
+            free(relast);
+            relast = relast_next;
+        }
+        free((void *)atoi_install_opt.install_name);
+        break;
+    case PULL_INSTALL:
+        pull_install();
 
 #ifndef SERVERINSTALL
-            // 资源释放
-            free(atoi_install_opt.pull_info->pull_number);
-            free(atoi_install_opt.pull_info->diff_url);
-            free(atoi_install_opt.pull_info->patch_url);
-            free(atoi_install_opt.pull_info->state);
-            free(atoi_install_opt.pull_info->title);
-            free(atoi_install_opt.pull_info->body);
-            free(atoi_install_opt.pull_info->user_login);
-            free(atoi_install_opt.pull_info->head_ref);
-            free(atoi_install_opt.pull_info->head_user_login);
-            free(atoi_install_opt.pull_info->head_repo_name);
-            free(atoi_install_opt.pull_info->head_repo_ssh_url);
-            free(atoi_install_opt.pull_info->base_ref);
-            free(atoi_install_opt.pull_info->base_user_login);
-            free(atoi_install_opt.pull_info->base_repo_name);
-            free(atoi_install_opt.pull_info->base_repo_ssh_url);
-            free(atoi_install_opt.pull_info);
+        // 资源释放
+        free(atoi_install_opt.pull_info->pull_number);
+        free(atoi_install_opt.pull_info->diff_url);
+        free(atoi_install_opt.pull_info->patch_url);
+        free(atoi_install_opt.pull_info->state);
+        free(atoi_install_opt.pull_info->title);
+        free(atoi_install_opt.pull_info->body);
+        free(atoi_install_opt.pull_info->user_login);
+        free(atoi_install_opt.pull_info->head_ref);
+        free(atoi_install_opt.pull_info->head_user_login);
+        free(atoi_install_opt.pull_info->head_repo_name);
+        free(atoi_install_opt.pull_info->head_repo_ssh_url);
+        free(atoi_install_opt.pull_info->base_ref);
+        free(atoi_install_opt.pull_info->base_user_login);
+        free(atoi_install_opt.pull_info->base_repo_name);
+        free(atoi_install_opt.pull_info->base_repo_ssh_url);
+        free(atoi_install_opt.pull_info);
 #endif
-            break;
-        case GIT_INSTALL:
-            if (atoi_install_opt.install_name == NULL) {
-                atoi_install_opt.install_name = strdup(get_cur_branch_name());
-            }
-            install_deb("Install name: [%s]\n", atoi_install_opt.install_name);
-                        install_mes("Install from current git repository branch [%s]\n",
-                                    atoi_install_opt.install_name);
-            start_install();
-            free((void *)atoi_install_opt.install_name);
-            break;
-        case WEB_DIR_INSTALL:
-            // check dir exist
-            
-            start_install();
-            free((void *)atoi_install_opt.install_name);
-            break;
-        case PACKAGE_INSTALL:
-            // install from package
-            package_install(atoi_install_opt.package_info);
-            
-            free((void *)atoi_install_opt.package_info);
-            free((void *)atoi_install_opt.install_name);
-            break;
-        default:
-            usage();
-            exit(EXIT_FAILURE);
-            break;
+        break;
+    case GIT_INSTALL:
+        if (atoi_install_opt.install_name == NULL)
+        {
+            atoi_install_opt.install_name = strdup(get_cur_branch_name());
+        }
+        install_deb("Install name: [%s]\n", atoi_install_opt.install_name);
+        install_mes("Install from current git repository branch [%s]\n",
+                    atoi_install_opt.install_name);
+        start_install();
+        free((void *)atoi_install_opt.install_name);
+        break;
+    case WEB_DIR_INSTALL:
+        // check dir exist
+
+        start_install();
+        free((void *)atoi_install_opt.install_name);
+        break;
+    case PACKAGE_INSTALL:
+        // install from package
+        package_install(atoi_install_opt.package_info);
+
+        free((void *)atoi_install_opt.package_info);
+        free((void *)atoi_install_opt.install_name);
+        break;
+    default:
+        usage();
+        exit(EXIT_FAILURE);
+        break;
     }
 
     free((void *)atoi_install_opt.dbname);
@@ -458,5 +447,8 @@ int main(int argc, const char * argv[])
     free((void *)atoi_install_opt.cur_dir);
     free((void *)atoi_install_opt.home_dir);
 
+    fclose(log_file);
+    
     return 0;
 }
+

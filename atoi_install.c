@@ -73,7 +73,7 @@ YAJL_API yajl_val atoi_yajl_tree_get(yajl_val *node, const char **name, int type
             fprintf(stderr, "%s ", name[i]);
             i++;
         }
-        extErr("] node in response from json. Pull request number is incorrect.\n");
+        extErr("] node in response from json. Pull request number is incorrect.");
     }
     return jajlVal;
 }
@@ -138,13 +138,13 @@ void pull_install()
     
     install_mes("Getting pull request [%s] info ...\n", atoi_install_opt.pull_info->pull_number);
     if ((returnCode = curl_easy_perform(curl)) != CURLE_OK) {
-        extErr("curl wrong: [%s]!\n", curl_err_buf);
+        extErr("curl wrong: [%s]!", curl_err_buf);
     }
     
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     if (http_code != 200) {
-        extErr("Pull request number [%s] is incorrect!\n", atoi_install_opt.pull_info->pull_number);
+        extErr("Pull request number [%s] is incorrect!", atoi_install_opt.pull_info->pull_number);
     }
     
     install_deb("开始解析json\n");
@@ -280,7 +280,7 @@ void package_install(const char *get_package_info)
                     // 缓存目录名
                     snprintf(param, 255, "url \"%s\" \"%s\" \"%ld\"", upgrade_package, package_name+1, now);
                     if (install_hook("package_install", param) != 0)
-                        extErr("Can not download package from [%s]\n", upgrade_package);
+                        extErr("Can not download package from [%s]", upgrade_package);
                     
                     // 使用升级包中的 dataloader 文件
                     atoi_install_opt.cp_dataloader = 1;
@@ -298,17 +298,17 @@ void package_install(const char *get_package_info)
                     char param[256];
                     snprintf(param, 255, "lczip \"\" \"%s\" \"%ld\"", upgrade_package, now);
                     if (install_hook("package_install", param) != 0)
-                        extErr("解压缩文件 [%s] 失败!\n", upgrade_package);
+                        extErr("解压缩文件 [%s] 失败!", upgrade_package);
                     start_install();
                 } else {
-                    extErr("无效的压缩包文件!\n");
+                    extErr("无效的压缩包文件!");
                 }
             }
         } else {
             // 安装升级包
             install_mes("Update package [%s]\n", upgrade_package);
             if (install_hook("package_install upgrade \"NULL\" ", upgrade_package) != 0)
-                extErr("解压缩文件 [%s] 失败!\n", upgrade_package);
+                extErr("解压缩文件 [%s] 失败!", upgrade_package);
         }
         i++;
         upgrade_package = strtok(NULL, " ");
@@ -316,7 +316,7 @@ void package_install(const char *get_package_info)
         // run dataloader
         if (upgrade_package == NULL) {
             if (install_hook("after_package_install", NULL) != 0)
-                extErr("执行hook [after_package_install] 失败!\n");
+                extErr("执行hook [after_package_install] 失败!");
         }
     }
     free(install_package);
@@ -339,7 +339,7 @@ pre_install()
     install_mes("Init db and build code...\n");
     switch (childPid = fork()) {
         case -1:
-            extErr("Fork error...\n");
+            extErr("Fork error...");
             break;
         case 0:
             
@@ -374,7 +374,7 @@ pre_install()
         default:
             switch (dl_pid = fork()) {
                 case -1:
-                    extErr("Fork error...\n");
+                    extErr("Fork error...");
                     break;
                 case 0:
 //                    if (atoi_install_opt.dataloader && atoi_install_opt.cp_dataloader) {
@@ -397,7 +397,7 @@ pre_install()
                         // build code from git repository
                         install_mes("Building code into [%s]...\n", atoi_install_opt.build_path);
                         if (install_hook("build_code", NULL) != 0)
-                            extErr("Run hook [build_code] wrong!\n");
+                            extErr("Run hook [build_code] wrong!");
                     }
                     break;
             }
@@ -408,15 +408,15 @@ pre_install()
         if (WIFEXITED(status)) {
             // 子进程正常结束
             if (WEXITSTATUS(status) != 0)
-                extErr("Init db [%s] wrong! Return value: [%d]\n", atoi_install_opt.dbname, WEXITSTATUS(status));
+                extErr("Init db [%s] wrong! Return value: [%d]", atoi_install_opt.dbname, WEXITSTATUS(status));
         } else if (WIFSIGNALED(status)) {
             // 子进程因信号被杀掉
-            extErr("Child[%d] is killed by signal[%d]\n", childPid, WTERMSIG(status));
+            extErr("Child[%d] is killed by signal[%d]", childPid, WTERMSIG(status));
         } else if (WIFSTOPPED(status)) {
             // 子进程因信号而停止
-            extErr("Child[%d] is stoped by signal[%d]\n", childPid, WSTOPSIG(status));
+            extErr("Child[%d] is stoped by signal[%d]", childPid, WSTOPSIG(status));
         } else if (WIFCONTINUED(status)) {
-            extErr("Child[%d] catch signal[%d]\n", childPid, WSTOPSIG(status));
+            extErr("Child[%d] catch signal[%d]", childPid, WSTOPSIG(status));
         }
     }
 }
@@ -492,7 +492,7 @@ start_install()
     }
     else if (ENOENT == errno)
     {
-        extErr("安装文件 [%s] 不存在\n", dir_path);
+        extErr("安装文件 [%s] 不存在", dir_path);
         /* Directory does not exist. */
     }
     
@@ -539,7 +539,7 @@ start_install()
         
         if (response_code != 200) {
             install_mes("Params: %s\n", lineptr);
-            extErr("Wrong response code [%ld]\n", response_code);
+            extErr("Wrong response code [%ld]", response_code);
         }
         install_mes("Response code: %ld\n", response_code);
         cur_step++;

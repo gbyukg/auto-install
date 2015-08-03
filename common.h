@@ -80,6 +80,17 @@ __atoi_malloc;\
 #define CUS_SYSCALL(func) ({\
 int rtCode = -1; /* return code */ \
 if ((rtCode = func) == -1) {\
+CURTIME(log_file); \
+fprintf(stderr,\
+": Custom call [" #func "] wrong: %s; ", atoi_err_mes.err_mes);\
+fprintf(stderr,\
+"** FILE: %s; "\
+"** FUNC: %s; "\
+"** LINE: %d\n",\
+__FILE__,\
+__FUNCTION__,\
+__LINE__);\
+exit(EXIT_FAILURE);\
 CURTIME(stderr);\
 fprintf(stderr,\
 ": Custom call [" KMAG #func KNRM "] wrong: %s\n"KRED, atoi_err_mes.err_mes);\
@@ -96,9 +107,18 @@ rtCode;\
 })
 
 #define extErr(format, ...) { \
+CURTIME(log_file); \
+fprintf(log_file, \
+": "format "; [FILE]: %s; "\
+"[FUNC]: %s; "\
+"[LINE]: %d\n",\
+##__VA_ARGS__, \
+__FILE__,\
+__FUNCTION__,\
+__LINE__);\
 CURTIME(stderr); \
 fprintf(stderr, \
-": "format KNRM"** FILE: "KCYN"%s"KNRM"\n"\
+": "format KNRM"\n** FILE: "KCYN"%s"KNRM"\n"\
 "** FUNC: "KCYN"%s"KNRM"\n"\
 "** LINE: "KCYN"%d"KNRM"\n",\
 ##__VA_ARGS__, \
@@ -109,6 +129,9 @@ exit(EXIT_FAILURE); \
 }
 
 #define install_deb(format, ...) ({\
+CURTIME(log_file); \
+fprintf(log_file, \
+" Debug Message: " format, ##__VA_ARGS__);\
 if (atoi_install_opt.debug) {\
 CURTIME(stdout); \
 fprintf(stdout, \
@@ -117,6 +140,9 @@ KCYN " Debug Message: "KNRM format, ##__VA_ARGS__);\
 })
 
 #define install_mes(format, ...) {\
+CURTIME(log_file); \
+fprintf(log_file, \
+KGRN " Info: "KNRM format, ##__VA_ARGS__);\
 CURTIME(stdout); \
 fprintf(stdout, \
 KGRN " Info: "KNRM format, ##__VA_ARGS__);\
@@ -127,6 +153,8 @@ KGRN " Info: "KNRM format, ##__VA_ARGS__);\
 #define GIT_INSTALL     4
 #define WEB_DIR_INSTALL 8
 #define PACKAGE_INSTALL 16
+
+FILE *log_file;
 
 /*
  * pull request 信息

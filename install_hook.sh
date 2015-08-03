@@ -445,10 +445,10 @@ after_install()
 
     cd "${WEB_DIR}${INSTALL_NAME}"
     cus_echo "Init git"
-    #git init
-    #{
-        #git add . && git commit -m "init"
-    #} >& /dev/null
+    git init
+    {
+        git add . && git commit -m "init"
+    } >& /dev/null
 
     #cus_echo "生成TAGS..."
     #find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
