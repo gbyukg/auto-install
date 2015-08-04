@@ -40,4 +40,5 @@ void branch_install_prepare_git();
 
 void pull_install_prepare_git(void);
 
+void get_current_branch(char **cur_branch, git_repository *repo);
 #endif /* defined(__atoi_git__) */

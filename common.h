@@ -80,9 +80,11 @@ __atoi_malloc;\
 #define CUS_SYSCALL(func) ({\
 int rtCode = -1; /* return code */ \
 if ((rtCode = func) == -1) {\
+if(log_file != NULL) {\
 CURTIME(log_file); \
 fprintf(stderr,\
 ": Custom call [" #func "] wrong: %s; ", atoi_err_mes.err_mes);\
+}\
 fprintf(stderr,\
 "** FILE: %s; "\
 "** FUNC: %s; "\
@@ -107,6 +109,7 @@ rtCode;\
 })
 
 #define extErr(format, ...) { \
+if(log_file != NULL) {\
 CURTIME(log_file); \
 fprintf(log_file, \
 ": "format "; [FILE]: %s; "\
@@ -116,6 +119,7 @@ fprintf(log_file, \
 __FILE__,\
 __FUNCTION__,\
 __LINE__);\
+}\
 CURTIME(stderr); \
 fprintf(stderr, \
 ": "format KNRM"\n** FILE: "KCYN"%s"KNRM"\n"\
@@ -129,9 +133,11 @@ exit(EXIT_FAILURE); \
 }
 
 #define install_deb(format, ...) ({\
+if(log_file != NULL) {\
 CURTIME(log_file); \
 fprintf(log_file, \
 " Debug Message: " format, ##__VA_ARGS__);\
+}\
 if (atoi_install_opt.debug) {\
 CURTIME(stdout); \
 fprintf(stdout, \
@@ -140,10 +146,12 @@ KCYN " Debug Message: "KNRM format, ##__VA_ARGS__);\
 })
 
 #define install_mes(format, ...) {\
+if(log_file != NULL) {\
 CURTIME(log_file); \
 fprintf(log_file, \
 KGRN " Info: "KNRM format, ##__VA_ARGS__);\
 CURTIME(stdout); \
+}\
 fprintf(stdout, \
 KGRN " Info: "KNRM format, ##__VA_ARGS__);\
 }
@@ -153,6 +161,7 @@ KGRN " Info: "KNRM format, ##__VA_ARGS__);\
 #define GIT_INSTALL     4
 #define WEB_DIR_INSTALL 8
 #define PACKAGE_INSTALL 16
+#define CR_PR           32
 
 FILE *log_file;
 
@@ -186,6 +195,12 @@ typedef struct _atoi_branch_info
     struct _atoi_branch_info *next;
 } _atoi_branch_info_;
 
+typedef struct _atoi_cr_pr
+{
+    char *bash_ref;
+    char *head_ref;
+} _atoi_cr_pr_;
+
 /*
  * 安装选项
  */
@@ -202,6 +217,7 @@ struct install_options {
     const char *install_hook_script;
     char *install_name; // install name
     const char *init_db_script;
+    const char *token;
     
     const char *git_path;     // git 路径
     const char *web_path;     // web 路径
@@ -230,13 +246,15 @@ struct install_options {
     
     const char git_token[64]; // github token
     union {
-        _atoi_pull_info_ *atoi_pull_info;
+        _atoi_pull_info_   *atoi_pull_info;
         _atoi_branch_info_ *atoi_branch_info;
+        _atoi_cr_pr_       *atoi_cr_pr;
         char *package_info;
     } __install_paramater;
-#define pull_info __install_paramater.atoi_pull_info
-#define branch_info __install_paramater.atoi_branch_info
+#define pull_info    __install_paramater.atoi_pull_info
+#define branch_info  __install_paramater.atoi_branch_info
 #define package_info __install_paramater.package_info
+#define cr_pr        __install_paramater.atoi_cr_pr
 };
 
 /*

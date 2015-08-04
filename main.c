@@ -118,6 +118,7 @@ getConfig(struct install_options *opt)
     const char *web_path            = getenv("ATOI_WEB_PATH");
     const char *install_hook_script = getenv("ATOI_INSTALL_HOOK_SCRIPT");
     const char *init_db_script      = getenv("ATOI_INIT_DB_SCRIPT");
+    const char *token               = getenv("ATOI_token");
     const char *def_base_user       = NULL;
     const char *def_head_user       = NULL;
 
@@ -151,6 +152,7 @@ getConfig(struct install_options *opt)
     atoi_install_opt.build_path          = atoi_iniparser_getstring(ini, "atoi_build_path", build_path);
     atoi_install_opt.install_hook_script = atoi_iniparser_getstring(ini, "atoi_install_hook_script", install_hook_script);
     atoi_install_opt.init_db_script      = atoi_iniparser_getstring(ini, "atoi_init_db_script", init_db_script);
+    atoi_install_opt.token               = atoi_iniparser_getstring(ini, "atoi_token", token);
     atoi_install_opt.def_base_user       = atoi_iniparser_getstring(ini, "atoi_def_base_user", def_base_user);
     atoi_install_opt.def_head_user       = atoi_iniparser_getstring(ini, "atoi_def_head_user", def_head_user);
 
@@ -182,7 +184,7 @@ static void
 open_log()
 {
     char log_file_name[256];
-    snprintf(log_file_name, 255, "/tmp/%d", getpid());
+    snprintf(log_file_name, 255, "%s%s_%d", atoi_install_opt.tmp_path, atoi_install_opt.install_name ,getpid());
 
     if ((log_file = fopen(log_file_name, "w+")) == NULL) {
         perror("fone wrong!");
@@ -193,8 +195,6 @@ open_log()
 static void
 init_install()
 {
-    open_log();
-    
     install_deb("init install ...\n");
     int len = sizeof(char) * 1024;
     atoi_install_opt.cur_dir = atoi_malloc(len);
@@ -207,8 +207,8 @@ init_install()
     // 读取配置文件信息
     getConfig(&atoi_install_opt);
 
-    if (install_hook("init", NULL) != 0)
-        extErr("Run hook [init] wrong!");
+//    if (install_hook("init", NULL) != 0)
+//        extErr("Run hook [init] wrong!");
 
     curl_global_init(CURL_GLOBAL_ALL);
 }
@@ -238,6 +238,18 @@ install_usage(void)
             "  --no-unit                            安装完成后不执行 unit test(默认).\n"
             "  --debug                              开启 debug 模式.\n"
             "  -h|--help                            帮助信息.\n"
+            );
+}
+
+static void
+atoi_usage(void)
+{
+    fprintf(stderr,
+            "  install [option]          安装SC\n"
+            "  repair <web_dir>          repair 指定的目录.\n"
+            "  cr-pr <bash_head>         将mango目录下的当前分支以 <bash_head> 为基准分支创建pull request.\n"
+            "  format-js <web_dir>       格式化指定安装目录下的JS文件"
+            "  -h|--help                 帮助信息.\n"
            );
 }
 
@@ -250,7 +262,7 @@ int main(int argc, const char * argv[])
 {
     if (argc < 2)
     {
-        usage();
+        atoi_usage();
         exit(1);
     }
 
@@ -349,15 +361,23 @@ int main(int argc, const char * argv[])
             install_usage();
             exit(-1);
         }
-
+        
+        // 打开日志文件
+        open_log();
     }
     else if (strcmp("repair", argv[i]) == 0)
     {
 
     }
-    else if (strcmp("create-pr", argv[i]) == 0)
+    else if (strcmp("cr-pr", argv[i]) == 0)
     {
-
+        if (argc < 2) {
+            extErr("需要指定基准分支");
+        }
+        atoi_install_opt.cr_pr = (_atoi_cr_pr_*)atoi_malloc(sizeof(_atoi_cr_pr_));
+        atoi_install_opt.cr_pr->head_ref = NULL;
+        atoi_install_opt.cr_pr->bash_ref = strdup(argv[2]);
+        atoi_install_opt.install_method = CR_PR;
     }
     else if (strcmp("format-js", argv[i]) == 0)
     {
@@ -432,6 +452,12 @@ int main(int argc, const char * argv[])
         free((void *)atoi_install_opt.package_info);
         free((void *)atoi_install_opt.install_name);
         break;
+        case CR_PR:
+            atoi_create_pull_request();
+            
+            free(atoi_install_opt.cr_pr->bash_ref);
+            free(atoi_install_opt.cr_pr);
+            break;
     default:
         usage();
         exit(EXIT_FAILURE);
@@ -446,6 +472,7 @@ int main(int argc, const char * argv[])
     free((void *)atoi_install_opt.def_head_user);
     free((void *)atoi_install_opt.cur_dir);
     free((void *)atoi_install_opt.home_dir);
+    free((void *)atoi_install_opt.token);
 
     fclose(log_file);
     

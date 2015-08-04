@@ -240,7 +240,7 @@ atoi_git_checkout_branch(git_repository *repo,
             install_deb("Current branch is [%s], "
                         "creat and checkout new branch [%s].\n",
                         install_name,
-                        "");
+                        "master");
 
             git_reference *nnew_branch_ref = NULL;
             char *n_target_branch_ref_name = "refs/heads/master";
@@ -611,4 +611,12 @@ void pull_install_prepare_git(void)
     if (repo != NULL)
         git_repository_free(repo);
     git_err(git_libgit2_shutdown());
+}
+
+void get_current_branch(char **cur_branch, git_repository *repo)
+{
+    git_reference *cur_refs = NULL;
+    
+    git_err(git_repository_head(&cur_refs, repo));
+    git_err(git_branch_name((const char**)cur_branch, cur_refs));
 }

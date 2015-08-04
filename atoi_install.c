@@ -101,12 +101,17 @@ void pull_install()
     CURLcode returnCode = CURLE_OK;
     struct curl_slist *headers = NULL;
     char token[128] = "Authorization: token %s";
+    if (atoi_install_opt.token == NULL) {
+        extErr("token is null.\n");
+    }
     snprintf(token,
              sizeof(char) * 62, // 注意长度, 直接用 sizeof(token) 导致多余空白字符被传递过去, 认证会失败
              token,
-             "9c6ea558a719caf4e7c96bdf5321ed6976ca5e48");
+             atoi_install_opt.token);
     
-    CURL *curl = atoi_get_curl(pull_url, &headers);
+    headers = curl_slist_append(headers, token);
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    CURL *curl = atoi_get_curl(pull_url, headers);
     if (!curl) {
         extErr("CURL 初始化失败");
     }
@@ -115,9 +120,6 @@ void pull_install()
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 90L);
     // 设置解析时间
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
-    
-    headers = curl_slist_append(headers, token);
-    headers = curl_slist_append(headers, "Content-Type: application/json");
     
     /*
      * 如果使用了 CURLOPT_WRITEFUNCTION 属性, pointer 则会被传递给
@@ -130,7 +132,7 @@ void pull_install()
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+//    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_URL, pull_url);
     
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 90L);
@@ -449,18 +451,17 @@ static long curl_install_step(const char *post)
     
     if (post != NULL) install_deb("%s\n", post);
     atoi_install_opt.debug = 0;
-    CURL *curl = atoi_get_curl(install_url, &headers);
-    atoi_install_opt.debug = debug;
     
-    headers = curl_slist_append(headers, "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-    headers = curl_slist_append(headers, "Accept-Encoding: gzip, deflate, sdch");
-    headers = curl_slist_append(headers, "Connection: keep-alive");
-    headers = curl_slist_append(headers, "Accept-Language: en,zh-CN;q=0.8,zh;q=0.6");
-    headers = curl_slist_append(headers, "Connection: keep-alive");
-    headers = curl_slist_append(headers, "Content-Type: text/html");
-    headers = curl_slist_append(headers, host);
-    headers = curl_slist_append(headers, ref);
-//    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+//    headers = curl_slist_append(headers, "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+//    headers = curl_slist_append(headers, "Accept-Encoding: gzip, deflate, sdch");
+//    headers = curl_slist_append(headers, "Connection: keep-alive");
+//    headers = curl_slist_append(headers, "Accept-Language: en,zh-CN;q=0.8,zh;q=0.6");
+//    headers = curl_slist_append(headers, "Connection: keep-alive");
+//    headers = curl_slist_append(headers, "Content-Type: text/html");
+//    headers = curl_slist_append(headers, host);
+//    headers = curl_slist_append(headers, ref);
+    CURL *curl = atoi_get_curl(install_url, headers);
+    atoi_install_opt.debug = debug;
     
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, no_write_callback);
     if (post != NULL)
@@ -469,7 +470,7 @@ static long curl_install_step(const char *post)
     curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file);
 
     curl_easy_perform(curl);
-    
+    curl_slist_free_all(headers);
     long http_code;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     curl_easy_cleanup(curl);

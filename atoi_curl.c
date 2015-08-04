@@ -78,7 +78,7 @@ int my_trace(CURL *handle, curl_infotype type,
     return 0;
 }
 
-CURL *atoi_get_curl(const char *url, struct curl_slist **headers)
+CURL *atoi_get_curl(const char *url, struct curl_slist *headers)
 {
 //    struct curl_slist *headers = NULL;
 
@@ -104,9 +104,75 @@ CURL *atoi_get_curl(const char *url, struct curl_slist **headers)
         curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
     }
 
-    *headers = curl_slist_append(*headers, "User-Agent:gbyukg");
+    headers = curl_slist_append(headers, "User-Agent:gbyukg");
     
-//    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     return curl;
+}
+
+int atoi_create_pull_request()
+{
+    int err = 0;
+    git_repository *repo = NULL;
+    CURL *curl = NULL;
+    git_oid head_oid;
+    git_reference *head_ref = NULL;
+    const char *head_ref_name = NULL;
+    struct curl_slist *headers = NULL;
+    git_commit *head_commit = NULL;
+    char *commit_message = NULL;
+    char post_data[1024];
+    const char *url = "https://api.github.com/repos/sugareps/Mango/pulls";
+    
+    install_deb("基准分支: [%s]\n", atoi_install_opt.cr_pr->bash_ref);
+    atoi_git_init(atoi_install_opt.git_path, &repo);
+    
+    if (atoi_install_opt.cr_pr->head_ref == NULL) {
+        get_current_branch(&atoi_install_opt.cr_pr->head_ref, repo);
+        install_deb("获取当前分支: [%s]\n", atoi_install_opt.cr_pr->head_ref);
+    }
+    
+    install_mes("Creat pull request into [%s] from [%s]\n",
+                atoi_install_opt.cr_pr->bash_ref,
+                atoi_install_opt.cr_pr->head_ref);
+    
+    git_err(git_branch_lookup(&head_ref, repo, atoi_install_opt.cr_pr->head_ref, GIT_BRANCH_LOCAL));
+    if ((head_ref_name = git_reference_name(head_ref)) == NULL)
+        extErr("head_ref_name is empty");
+    git_err(git_reference_name_to_id(&head_oid, repo, head_ref_name));
+    git_err(git_commit_lookup(&head_commit, repo, &head_oid));
+    if ((commit_message = (char*)git_commit_message(head_commit)) == NULL)
+        extErr("Commit message is NULL");
+    // 去掉commit信息最后一个换行符
+    size_t mes_len = strlen(commit_message);
+    if (commit_message[mes_len - 1] == '\n') {
+        commit_message[mes_len - 1] = '\0';
+    }
+    
+    char toke[62] = "Authorization: token ";
+    if (atoi_install_opt.token == NULL) {
+        extErr("token is null.\n");
+    }
+    strcat(toke, atoi_install_opt.token);
+    headers = curl_slist_append(headers, toke);
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl = atoi_get_curl(url, headers);
+    
+    sprintf(post_data, "{\"title\":\"%s\",\"head\":\"%s:%s\",\"base\":\"%s\",\"body\":\"%s\"}",
+                                commit_message,
+                                "gbyukg",
+                                atoi_install_opt.cr_pr->head_ref,
+                                atoi_install_opt.cr_pr->bash_ref,
+                                commit_message);
+
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
+    
+    if (CURLE_OK != curl_easy_perform(curl)) {
+        extErr("curl_easy_perfomr wrong message: %s", curl_err_buf);
+    }
+    
+    curl_slist_free_all(headers);
+    git_repository_free(repo);
+    return err;
 }
