@@ -23,6 +23,8 @@ struct install_options atoi_install_opt =
     .build_code_or_not = 1,
     .init_db_or_not = 1,
     .cp_dataloader = 0,
+    .run_after_install = 1,
+    .update_composer = 1,
 };
 
 //extern FILE *log_file;
@@ -127,19 +129,12 @@ getConfig(struct install_options *opt)
     const char *sc_admin            = getenv("ATOI_SC_ADMIN");
     const char *sc_admin_pwd        = getenv("ATOI_SC_ADMIN_PWD");
 
-#ifdef SERVERINSTALL
-    const char *dbname              = getenv("BUILD_NUMBER");
-    const char *db_port             = getenv("DB_PORT");
-    const char *db_host             = getenv("DB_HOST");
-    const char *db_admin            = getenv("DB_USER");
-    const char *db_admin_pwd        = getenv("DB_PASSWORD");
-#else
+
     const char *dbname              = getenv("ATOI_DBNAME");
     const char *db_port             = getenv("ATOI_DB_PORT");
     const char *db_host             = getenv("ATOI_DB_HOST");
     const char *db_admin            = getenv("ATOI_DB_ADMIN");
     const char *db_admin_pwd        = getenv("ATOI_DB_ADMIN_PWD");
-#endif
 
     const char *fts_type            = getenv("ATOI_FTS_TYPE");
     const char *fts_host            = getenv("ATOI_FTS_HOST");
@@ -206,9 +201,6 @@ init_install()
 
     // 读取配置文件信息
     getConfig(&atoi_install_opt);
-
-    if (install_hook("init", NULL) != 0)
-        extErr("Run hook [init] wrong!");
 
     curl_global_init(CURL_GLOBAL_ALL);
 }
@@ -389,6 +381,10 @@ int main(int argc, const char * argv[])
         abort();
     }
 
+    // 执行初始化脚本钩子
+    if (install_hook("init", NULL) != 0)
+        extErr("Run hook [init] wrong!");
+    
     switch (atoi_install_opt.install_method)
     {
     case BRANCH_INSTALL:

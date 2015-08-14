@@ -248,7 +248,12 @@ void branch_install()
 
 void package_install(const char *get_package_info)
 {
+    // 禁止 build 代码
     atoi_install_opt.build_code_or_not = 0;
+    // 不跑 after_install hook
+    atoi_install_opt.run_after_install = 0;
+    // 禁止更新composer
+    // atoi_install_opt.update_composer = 0;
     
     install_mes("Install from package\n");
     const char *install_name = "package_install";
@@ -262,11 +267,6 @@ void package_install(const char *get_package_info)
     
     strcpy(install_package, get_package_info);
     char *upgrade_package = strtok(install_package, " ");
-    
-//    while (upgrade_package != NULL) {
-//        printf("%s\n", upgrade_package);
-//        upgrade_package = strtok(NULL, " ");
-//    }
 
     while (upgrade_package != NULL) {
         if (i == 0) {
@@ -308,8 +308,10 @@ void package_install(const char *get_package_info)
             }
         } else {
             // 安装升级包
-            install_mes("Update package [%s]\n", upgrade_package);
-            if (install_hook("package_install upgrade \"NULL\" ", upgrade_package) != 0)
+            char param[256];
+            snprintf(param, 255, "upgrade \"NULL\" \"%s\" \"%ld\"", upgrade_package, now);
+            install_mes("\nUpdate package [%s]\n", upgrade_package);
+            if (install_hook("package_install", param) != 0)
                 extErr("解压缩文件 [%s] 失败!", upgrade_package);
         }
         i++;
@@ -321,6 +323,10 @@ void package_install(const char *get_package_info)
                 extErr("执行hook [after_package_install] 失败!");
         }
     }
+    
+    // dataloader
+    after_install();
+    
     free(install_package);
 }
 
@@ -480,6 +486,8 @@ static long curl_install_step(const char *post)
 void
 start_install()
 {
+    install_mes("Starting install [%s]...\n", atoi_install_opt.install_name);
+    
     pre_install();
     
     char dir_path[256];
@@ -505,7 +513,11 @@ start_install()
     snprintf(fileName, 511, "%s%d-atoi-XXXXXX", atoi_install_opt.tmp_path, getpid());
 
     install_mes("Start installing...\n");
+    sprintf(param, "\"%d\"", atoi_install_opt.update_composer);
+    if (install_hook("before_install", param) != 0)
+        extErr("Run hook [before_install] wrong!");
     
+    memset(param, 0, BUF_SIZE);
     int temFd = SYSCALL(mkstemp(fileName));
     if ((sfd = fdopen(temFd, "r+")) == NULL)
         extErr("fdopen wrong!");
@@ -526,7 +538,8 @@ start_install()
             atoi_install_opt.sc_admin,
             atoi_install_opt.sc_admin_pwd);
 
-    install_hook("install", param);
+    if (install_hook("install", param) != 0)
+        extErr("Run hook [install] wrong!");
 
     curl_install_step(NULL);
     int cur_step = 0;
@@ -551,7 +564,8 @@ start_install()
     fclose(sfd);
     unlink(fileName);
     
-    after_install();
+    if (atoi_install_opt.run_after_install == 1)
+        after_install();
 }
 
 static void
@@ -559,38 +573,28 @@ after_install()
 {
     // dataloader
     if (atoi_install_opt.dataloader) {
-        char param[BUF_SIZE];
-
-        snprintf(param, BUF_SIZE, "\"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ",
-                 atoi_install_opt.db_host,
-                 atoi_install_opt.db_port,
-                 atoi_install_opt.dbname,
-                 atoi_install_opt.db_admin,
-                 atoi_install_opt.db_admin_pwd,
-                 atoi_install_opt.cp_dataloader?atoi_install_opt.dataloader_dir:"");
         
         install_mes("data loader...\n");
-        install_deb("Param: %s\n", param);
-        if (install_hook("dataloader", param) != 0)
-            extErr("Run hook [build_code] wrong!")
+        if (install_hook("dataloader", NULL) != 0)
+            extErr("Run hook [build_code] wrong!");
     }
     
     // AVL
     if (atoi_install_opt.avl) {
         install_mes("Importing AVL ...\n");
         if (install_hook("load_avl", NULL) != 0)
-            extErr("Run hook [build_code] wrong!")
+            extErr("Run hook [build_code] wrong!");
     }
     
     // PHP unit test
     if (atoi_install_opt.unittest) {
         install_mes("Running PHP Unittest ...\n");
         if (install_hook("run_ut", NULL) != 0)
-            extErr("Run hook [build_code] wrong!")
+            extErr("Run hook [build_code] wrong!");
     }
     
     // after install logichook
     install_mes("After install ...\n");
     if (install_hook("after_install", NULL) != 0)
-        extErr("Run hook [build_code] wrong!")
+        extErr("Run hook [build_code] wrong!");
 }

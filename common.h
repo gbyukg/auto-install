@@ -206,7 +206,9 @@ struct install_options {
     int avl;            // 导入 ACL
     int unittest;       // 执行PHP unit test
     int build_code_or_not;     //
+    int run_after_install;
     int init_db_or_not;        //
+    int update_composer;        // 是否更新 composer, 默认更新
     char *cur_dir;      // 当前程序执行路径
     const char *install_hook_script;
     char *install_name; // install name

@@ -20,15 +20,20 @@ int install_hook(const char *func, const char *param)
      * arg4: web dir
      * arg5: build dir
      */
-    snprintf(hook, 1023, "\"%s\"  \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" %s",
+    snprintf(hook, 1023, "\"%s\"  \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" %s",
              atoi_install_opt.install_hook_script,
-             atoi_install_opt.debug == 1 ? "debug" : "no-debug",
              func,
+             atoi_install_opt.debug == 1 ? "debug" : "no-debug",
              atoi_install_opt.install_name,
              atoi_install_opt.git_path,
              atoi_install_opt.web_path,
              atoi_install_opt.build_path,
              atoi_install_opt.tmp_path,
+             atoi_install_opt.dbname,
+             atoi_install_opt.db_host,
+             atoi_install_opt.db_port,
+             atoi_install_opt.db_admin,
+             atoi_install_opt.db_admin_pwd,
              param == NULL ? "" : param);
     return shell_call(0, hook);
 }
