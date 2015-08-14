@@ -193,16 +193,17 @@ package_install()
 
     cat <<SYSCONFIG > system.config.php
 <?php
-\$config['apache_binary'] = '/document/gbyukg/soft/apache2.2/bin/apachectl';
-\$config['apache_user'] = 'gbyukg';
-\$config['apache_group'] = 'admin';
+\$config['apache_binary'] = '/opt/gnuhub/apache/bin/apachectl';
+\$config['apache_user'] = 'stallman';
+\$config['apache_group'] = 'stallman';
+\$config['temp_dir'] = "${TMP_DIR}/SIM";
 SYSCONFIG
 
     cat <<db2CONFIG > db2cli.config.php
 <?php
-\$config['db2profile'] = '/Users/gbyukg/sqllib/db2profile';
-\$config['db2createscript'] = '/document/gbyukg/www/test/newInstall/newInstall/initdb.sh';
-\$config['db2runas'] = '';
+\$config['db2profile'] = '/home/stallman/sqllib/db2profile';
+\$config['db2createscript'] = '/home/stallman/auto_install/initdb.sh';
+\$config['db2runas'] = 'stallman';
 db2CONFIG
 
     cat <<logCONFIG > logger.config.php

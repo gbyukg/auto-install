@@ -207,8 +207,8 @@ init_install()
     // 读取配置文件信息
     getConfig(&atoi_install_opt);
 
-//    if (install_hook("init", NULL) != 0)
-//        extErr("Run hook [init] wrong!");
+    if (install_hook("init", NULL) != 0)
+        extErr("Run hook [init] wrong!");
 
     curl_global_init(CURL_GLOBAL_ALL);
 }
