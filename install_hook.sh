@@ -72,17 +72,40 @@ error_check_exit()
     [[ 0 -ne "$?" ]] && exit_err "${1}"
 }
 
-#install_pro()
-#{
-    ##cd "${GIT_DIR}"
-    #cd /document/gbyukg/www/test/test
-    #echo "github token:"
-    #read token
-    #sha=$(echo ${token} | git hash-object -w --stdin)
-    #echo "sha: ${sha}"
+install_check()
+{
+    local apache_pid=$(cat /opt/gnuhub/apache/logs/httpd.pid)
+    [[ -z "${apache_pid}" ]] &&
+        echo "Apache is not start! Trying to start..." &&
+        sudo /opt/gnuhub/apache/bin/apachectl start &&
+        [[ 0 -ne $? ]] &&
+        echo "Starting apache wrong!" &&
+        exit 1
 
-    ## write token into the config file
-#}
+    local fpm_pid=$(cat /opt/gnuhub/php/var/run/php-fpm.pid)
+    if [[ -z "${fpm_pid}" ]]; then
+        echo "PHP_FPM is not start! Trying to start..."
+        sudo /opt/gnuhub/php/sbin/php-fpm
+        [[ 0 -ne $? ]] && echo "Start php-fpm wrong!" && exit 1
+    fi
+}
+
+install_info()
+{
+    cus_echo " URL "
+    echo "http://${E_HOST}:${E_HTTP_PORT}/${INSTALL_NAME}"
+
+    cus_echo " DB2 INFOMATION "
+    echo "HOST:     ${E_HOST}             PORT: ${E_DB2_PORT}"
+    echo "USERNAME: stallman                  PASSWORD: btit@ibm"
+    echo "DB_NAME:  ${DB_NAME}"
+
+    cus_echo " SSH INFOMATION "
+    echo "ssh stallman@${E_HOST} -p ${E_SSH_PORT}"
+    echo "PASSWORD: btit@ibm"
+    echo ""
+    echo ""
+}
 
 before_build()
 {
@@ -522,6 +545,10 @@ after_install()
     #cus_echo "生成TAGS..."
     #find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
 
+    echo "Importing ES Data..."
+    cd "${WEB_DIR}${INSTALL_NAME}"
+    php cron.php
+
     cus_echo "Running hook [after_install] finished"
 }
 
@@ -600,41 +627,23 @@ load_avl()
     cus_echo "Importing AVL..."
     cd "${WEB_DIR}${INSTALL_NAME}/custom/cli"
 
-    #php cli.php task=Avlimport file=${INSTANCEDIR}/custom/install/avl.csv idlMode=true
-
-    cus_echo "avl.csv"
+    echo "Importing avl.csv..."
     php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl.csv idlMode=true
-    cus_echo "01-update.csv"
-    php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/01-update.csv
-    cus_echo "02-remap.csv"
-    php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/02-remap.csv
-    cus_echo "03-update.csv"
-    php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/03-update.csv
-    cus_echo "04-update.csv"
-    php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/04-update.csv
-    cus_echo "05-update.csv"
-    php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/05-update.csv
-    cus_echo "06-winplan.csv"
-    php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/06-winplan.csv
+
+    local avl_files=$(ls "${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/*.csv)
+    for avl_file in ${avl_files}; do
+        echo "Importing ${avl_file}..."
+        echo php cli.php task=Avlimport file="${avl_file}"
+    done
+
+    php cli.php task=AVLRebuildFile
 }
 
 init()
 {
+    install_check
+    install_info
     [[ -d "${TMP_DIR}" ]] || mkdir -p "${TMP_DIR}"
-
-    cus_echo " URL "
-    echo "http://${E_HOST}:${E_HTTP_PORT}/${INSTALL_NAME}"
-
-    cus_echo " DB2 INFOMATION "
-    echo "HOST:     ${E_HOST}             PORT: ${E_DB2_PORT}"
-    echo "USERNAME: stallman                  PASSWORD: btit@ibm"
-    echo "DB_NAME:  ${DB_NAME}"
-
-    cus_echo " SSH INFOMATION "
-    echo "ssh stallman@${E_HOST} -p ${E_SSH_PORT}"
-    echo "PASSWORD: btit@ibm"
-    echo ""
-    echo ""
 }
 
 test()

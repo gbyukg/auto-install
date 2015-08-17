@@ -555,7 +555,7 @@ start_install()
             install_mes("Params: %s\n", lineptr);
             extErr("Wrong response code [%ld]", response_code);
         }
-        install_mes("Response code: %ld\n", response_code);
+        install_mes("Response code: %ld\n\n", response_code);
         cur_step++;
     }
     curl_install_step(NULL);
