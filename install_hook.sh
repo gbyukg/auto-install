@@ -60,6 +60,36 @@ cus_echo()
     printf "\n\e[35m%s [ %s ] %s\e[0m\n" "${star}" "$1" "${star}"
 }
 
+red_echo()
+{
+    printf "\n\e[31m%s\e[0m\n" "$@"
+}
+
+green_echo()
+{
+    printf "\n\e[32m%s\e[0m\n" "$@"
+}
+
+yellow_echo()
+{
+    printf "\n\e[33m%s\e[0m\n" "$@"
+}
+
+blue_echo()
+{
+    printf "\n\e[34m%s\e[0m\n" "$@"
+}
+
+light_magenta_echo()
+{
+    printf "\n\e[35m%s\e[0m\n" "$@"
+}
+
+cyan_echo()
+{
+    printf "\n\e[36m%s\e[0m\n" "$@"
+}
+
 exit_err()
 {
     echo ""
@@ -637,13 +667,13 @@ load_avl()
     cus_echo "Importing AVL..."
     cd "${WEB_DIR}${INSTALL_NAME}/custom/cli"
 
-    echo "Importing avl.csv..."
+    green_echo "Importing avl.csv..."
     php cli.php task=Avlimport file="${WEB_DIR}${INSTALL_NAME}"/custom/install/avl.csv idlMode=true
 
     local avl_files=$(ls "${WEB_DIR}${INSTALL_NAME}"/custom/install/avl/*.csv)
     for avl_file in ${avl_files}; do
-        echo "Importing ${avl_file}..."
-        echo php cli.php task=Avlimport file="${avl_file}"
+        green_echo "Importing ${avl_file}..."
+        php cli.php task=Avlimport file="${avl_file}"
     done
 
     php cli.php task=AVLRebuildFile
