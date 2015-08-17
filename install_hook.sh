@@ -378,7 +378,6 @@ after_package_install()
 
 before_install()
 {
-    # 修改 PHP 错误日志
     cus_echo "Running hook [before_install]"
     local update_composer="${1}"
 
@@ -388,6 +387,8 @@ before_install()
         cus_echo "composer install..."
         composer install
     }
+
+    # 修改 PHP 错误日志
 
     cus_echo "Running hook [before_install] finished"
 }
@@ -590,6 +591,8 @@ after_install()
     php cron.php
 
     cus_echo "Running hook [after_install] finished"
+
+    install_info
 }
 
 add_ignore()
@@ -657,8 +660,9 @@ PROJECT
 
 run_ut()
 {
-    cus_echo "Running unittest..."
-    cd "${WEB_DIR}${INSTALL_NAME}/tests"
+    [[ -d "${WEB_DIR}${INSTALL_NAME}" ]] &&
+    cd "${WEB_DIR}${INSTALL_NAME}/tests" &&
+    cus_echo "Running unittest..." &&
     phpunit
 }
 
