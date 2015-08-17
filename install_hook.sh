@@ -74,6 +74,7 @@ error_check_exit()
 
 install_check()
 {
+    # apache
     local apache_pid=$(cat /opt/gnuhub/apache/logs/httpd.pid)
     [[ -z "${apache_pid}" ]] &&
         echo "Apache is not start! Trying to start..." &&
@@ -82,11 +83,20 @@ install_check()
         echo "Starting apache wrong!" &&
         exit 1
 
+    # php
     local fpm_pid=$(cat /opt/gnuhub/php/var/run/php-fpm.pid)
     if [[ -z "${fpm_pid}" ]]; then
         echo "PHP_FPM is not start! Trying to start..."
         sudo /opt/gnuhub/php/sbin/php-fpm
         [[ 0 -ne $? ]] && echo "Start php-fpm wrong!" && exit 1
+    fi
+
+    # ES
+    local es_pid="/var/lock/subsys/elasticsearch"
+    if [[ ! -f "$es_pid" ]]; then
+        echo "ElasticSearch is not start! Trying to start..."
+        sudo service elasticsearch start
+        [[ 0 -ne $? ]] && echo "Start ES wrong!" && exit 1
     fi
 }
 
