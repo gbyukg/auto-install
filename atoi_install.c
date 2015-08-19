@@ -100,13 +100,13 @@ void pull_install()
     
     CURLcode returnCode = CURLE_OK;
     struct curl_slist *headers = NULL;
-    char token[128] = "Authorization: token %s";
+    char token[128];
     if (atoi_install_opt.token == NULL) {
         extErr("token is null.\n");
     }
     snprintf(token,
              sizeof(char) * 62, // 注意长度, 直接用 sizeof(token) 导致多余空白字符被传递过去, 认证会失败
-             token,
+             "Authorization: token %s",
              atoi_install_opt.token);
     
     headers = curl_slist_append(headers, token);
