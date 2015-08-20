@@ -506,7 +506,7 @@ start_install()
     char *lineptr = (char *)malloc(BUF_SIZE);
     size_t line_len = BUF_SIZE;
     char fileName[512];
-    snprintf(fileName, 511, "%s%d-atoi-XXXXXX", atoi_install_opt.tmp_path, getpid());
+    snprintf(fileName, 511, "%s\%s_%d-cache-XXXXXX", atoi_install_opt.tmp_path, atoi_install_opt.install_name, getpid());
 
     install_mes("Start installing...\n");
     sprintf(param, "\"%d\"", atoi_install_opt.update_composer);
@@ -538,7 +538,7 @@ start_install()
         extErr("Run hook [install] wrong!");
 
     char cookie_file[512];
-    snprintf(cookie_file, 511, "%s%s_%d.cookie", atoi_install_opt.tmp_path, atoi_install_opt.install_name, getpid());
+    snprintf(cookie_file, 511, "%s\%s_%d.cookie", atoi_install_opt.tmp_path, atoi_install_opt.install_name, getpid());
     install_deb("Cookie file: [%s]\n", cookie_file);
     
     curl_install_step(NULL, cookie_file);
