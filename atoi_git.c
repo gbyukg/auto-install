@@ -271,6 +271,9 @@ atoi_git_checkout_branch(git_repository *repo,
     install_mes("Update submodule ...\n");
     git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
     
+    // 提交改动
+    atoi_git_commit_from_index(repo, atoi_install_opt.install_name);
+    
     if (target_branch_obj != NULL)
         git_object_free(target_branch_obj);
 }
@@ -479,9 +482,6 @@ atoi_git_merge(git_repository *repo, const char *refs_name)
     
     // 获取当前状态信息
     atoi_get_git_status(repo);
-    
-    // 提交改动
-    atoi_git_commit_from_index(repo, atoi_install_opt.install_name);
     
     // 清理操作
     git_err(git_repository_state_cleanup(repo));
