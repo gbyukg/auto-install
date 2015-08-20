@@ -551,7 +551,6 @@ CONFIG
     cus_echo "Running hook [dataloader] finished"
 }
 
-# $2: install dir
 after_install()
 {
     touch "${WEB_DIR}${INSTALL_NAME}/sql.sql"
@@ -576,15 +575,15 @@ after_install()
     cp "${WEB_DIR}${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/templates/scripts/php/runRebuildJSGroupings.php" \
         "${WEB_DIR}${INSTALL_NAME}/runRebuildJSGroupings.php"
 
-    cd "${WEB_DIR}${INSTALL_NAME}"
     #cus_echo "Init git"
-    #git init
-    #{
-        #git add . && git commit -m "init"
-    #} >& /dev/null
+    cd "${WEB_DIR}${INSTALL_NAME}"
+    git init
+    {
+        git add . && git commit -m "init"
+    } >& /dev/null
 
-    #cus_echo "生成TAGS..."
-    #find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
+    cus_echo "生成TAGS..."
+    find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
 
     echo "Importing ES Data..."
     cd "${WEB_DIR}${INSTALL_NAME}"
@@ -664,6 +663,9 @@ run_ut()
     cd "${WEB_DIR}${INSTALL_NAME}/tests" &&
     cus_echo "Running unittest..." &&
     phpunit
+
+    # 即使执行失败, 也要返回0
+    exit 0
 }
 
 load_avl()
