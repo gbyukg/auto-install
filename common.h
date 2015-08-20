@@ -47,9 +47,28 @@ fprintf(fd, KBLU"%s"KNRM, cur_time); \
 fflush(NULL); \
 }
 
+#define DEB_CURTIME(fd) {\
+char cur_time[64] = {'\0'}; \
+time_t t = time(NULL); \
+strftime(cur_time, 63, "%c", localtime(&t)); \
+fprintf(fd, "%s", cur_time); \
+fflush(NULL); \
+}
+
 #define SYSCALL(func) ({\
 int rtCode = -1; /* return code */ \
 if ((rtCode = func) == -1) {\
+if(log_file != NULL) {\
+CURTIME(stderr);\
+perror(": System call [" KMAG #func KNRM "] wrong"KRED);\
+fprintf(stderr,\
+"** FILE: %s\n"\
+"** FUNC: %s\n"\
+"** LINE: %d\n",\
+__FILE__,\
+__FUNCTION__,\
+__LINE__);\
+}\
 CURTIME(stderr);\
 perror(": System call [" KMAG #func KNRM "] wrong"KRED);\
 fprintf(stderr,\
@@ -75,10 +94,9 @@ __atoi_malloc;\
 int rtCode = -1; /* return code */ \
 if ((rtCode = func) == -1) {\
 if(log_file != NULL) {\
-CURTIME(log_file); \
+DEB_CURTIME(log_file); \
 fprintf(stderr,\
 ": Custom call [" #func "] wrong: %s; ", atoi_err_mes.err_mes);\
-}\
 fprintf(stderr,\
 "** FILE: %s; "\
 "** FUNC: %s; "\
@@ -86,7 +104,7 @@ fprintf(stderr,\
 __FILE__,\
 __FUNCTION__,\
 __LINE__);\
-exit(EXIT_FAILURE);\
+}\
 CURTIME(stderr);\
 fprintf(stderr,\
 ": Custom call [" KMAG #func KNRM "] wrong: %s\n"KRED, atoi_err_mes.err_mes);\
@@ -104,7 +122,7 @@ rtCode;\
 
 #define extErr(format, ...) { \
 if(log_file != NULL) {\
-CURTIME(log_file); \
+DEB_CURTIME(log_file); \
 fprintf(log_file, \
 ": "format "; [FILE]: %s; "\
 "[FUNC]: %s; "\
@@ -128,7 +146,7 @@ exit(EXIT_FAILURE); \
 
 #define install_deb(format, ...) ({\
 if(log_file != NULL) {\
-CURTIME(log_file); \
+DEB_CURTIME(log_file); \
 fprintf(log_file, \
 " Debug Message: " format, ##__VA_ARGS__);\
 }\
@@ -141,9 +159,9 @@ KCYN " Debug Message: "KNRM format, ##__VA_ARGS__);\
 
 #define install_mes(format, ...) {\
 if(log_file != NULL) {\
-CURTIME(log_file); \
+DEB_CURTIME(log_file); \
 fprintf(log_file, \
-KGRN " Info: "KNRM format, ##__VA_ARGS__);\
+" Info: " format, ##__VA_ARGS__);\
 CURTIME(stdout); \
 }\
 fprintf(stdout, \

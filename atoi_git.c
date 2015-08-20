@@ -272,6 +272,7 @@ atoi_git_checkout_branch(git_repository *repo,
     git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
     
     // 提交改动
+    install_deb("Commit checkout files ...\n");
     atoi_git_commit_from_index(repo, atoi_install_opt.install_name);
     
     if (target_branch_obj != NULL)
