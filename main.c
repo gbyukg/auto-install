@@ -179,10 +179,11 @@ static void
 open_log()
 {
     char log_file_name[256];
-    snprintf(log_file_name, 255, "%s%s_%d.install.log", atoi_install_opt.tmp_path, atoi_install_opt.install_name ,getpid());
+    snprintf(log_file_name, 255, "%s/%s_%d.install.log", atoi_install_opt.tmp_path, atoi_install_opt.install_name ,getpid());
 
+    install_deb("Open log file: %s\n", log_file_name);
     if ((log_file = fopen(log_file_name, "w+")) == NULL) {
-        perror("fone wrong!");
+        perror("fopen wrong!");
         exit(EXIT_FAILURE);
     }
 }
@@ -203,6 +204,10 @@ init_install()
     getConfig(&atoi_install_opt);
 
     curl_global_init(CURL_GLOBAL_ALL);
+    
+    // 执行初始化脚本钩子
+    if (install_hook("init", NULL) != 0)
+        extErr("Run hook [init] wrong!");
 }
 
 static void
@@ -380,10 +385,6 @@ int main(int argc, const char * argv[])
         usage();
         abort();
     }
-
-    // 执行初始化脚本钩子
-    if (install_hook("init", NULL) != 0)
-        extErr("Run hook [init] wrong!");
     
     switch (atoi_install_opt.install_method)
     {
