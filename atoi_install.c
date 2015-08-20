@@ -25,7 +25,7 @@ pre_install(void);
 //static void
 //package_upgrade(const char *package_path);
 
-static long curl_install_step(const char *post);
+static long curl_install_step(const char *post, const char *cookie_files);
 
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -435,18 +435,14 @@ no_write_callback(void *contents, size_t size, size_t nmemb, void *userp)
     return size * nmemb;
 }
 
-static long curl_install_step(const char *post)
+static long curl_install_step(const char *post, const char *cookie_file)
 {
     struct curl_slist *headers = NULL;
     char install_url[512];
     char host[512];
     char ref[512];
-    char cookie_file[512];
     char *scp_web_host = strdup(atoi_install_opt.web_host);
     int debug = atoi_install_opt.debug;
-    
-    snprintf(cookie_file, 511, "%s%d-atoi.cookie", atoi_install_opt.tmp_path, getpid());
-    install_deb("Cookie file: [%s]\n", cookie_file);
     
     snprintf(install_url, 511, "%s/%s/install.php", atoi_install_opt.web_host, atoi_install_opt.install_name);
     snprintf(host, 511, "Host: %s", scp_web_host + 7);
@@ -541,7 +537,11 @@ start_install()
     if (install_hook("install", param) != 0)
         extErr("Run hook [install] wrong!");
 
-    curl_install_step(NULL);
+    char cookie_file[512];
+    snprintf(cookie_file, 511, "%s%s_%d.cookie", atoi_install_opt.tmp_path, atoi_install_opt.install_name, getpid());
+    install_deb("Cookie file: [%s]\n", cookie_file);
+    
+    curl_install_step(NULL, cookie_file);
     int cur_step = 0;
     long response_code = 0;
     
@@ -549,7 +549,7 @@ start_install()
         install_mes("Current step [%d]\n", cur_step);
         lineptr[strlen(lineptr) - 1] = '\0';
         
-        response_code = curl_install_step(lineptr);
+        response_code = curl_install_step(lineptr, cookie_file);
         
         if (response_code != 200) {
             install_mes("Params: %s\n", lineptr);
@@ -558,7 +558,7 @@ start_install()
         install_mes("Response code: %ld\n\n", response_code);
         cur_step++;
     }
-    curl_install_step(NULL);
+    curl_install_step(NULL, cookie_file);
     
     free(lineptr);
     fclose(sfd);

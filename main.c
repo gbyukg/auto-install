@@ -179,7 +179,7 @@ static void
 open_log()
 {
     char log_file_name[256];
-    snprintf(log_file_name, 255, "%s%s_%d", atoi_install_opt.tmp_path, atoi_install_opt.install_name ,getpid());
+    snprintf(log_file_name, 255, "%s%s_%d.install.log", atoi_install_opt.tmp_path, atoi_install_opt.install_name ,getpid());
 
     if ((log_file = fopen(log_file_name, "w+")) == NULL) {
         perror("fone wrong!");
