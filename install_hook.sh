@@ -17,6 +17,14 @@ shift
 [[ "debug" == "${1}"  ]] && readonly DEBUG=debug && set -x
 shift
 
+#define BRANCH_INSTALL  2
+#define GIT_INSTALL     4
+#define WEB_DIR_INSTALL 8
+#define PACKAGE_INSTALL 16
+#define CR_PR           32
+export readonly INSTALL_METHOD=${1}
+shift
+
 # pull_install_XXXX
 export readonly INSTALL_NAME=${1}
 shift
@@ -551,8 +559,19 @@ CONFIG
     cus_echo "Running hook [dataloader] finished"
 }
 
+run_federate()
+{
+    cus_echo "Run federate..."
+    cp "${WEB_DIR}${INSTALL_NAME}"/custom/install/federated_db_environment/runScenario.php "${WEB_DIR}${INSTALL_NAME}"
+    php "${WEB_DIR}${INSTALL_NAME} runScenario.php Fake"
+    php "${WEB_DIR}${INSTALL_NAME} runScenario.php UpgradeR31"
+}
+
 after_install()
 {
+    # 如果是包安装, 则需要run federate
+    [[ 16 -eq "${INSTALL_METHOD }" ]] && run_federate
+
     touch "${WEB_DIR}${INSTALL_NAME}/sql.sql"
     cp "${WORK_DIR}/repair.sh" "${WEB_DIR}${INSTALL_NAME}"
     cp -f "${WORK_DIR}/ChromePhp.php" "${WEB_DIR}${INSTALL_NAME}/include/ChromePhp.php"
