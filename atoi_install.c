@@ -539,7 +539,7 @@ start_install()
     
 #ifdef SERVERINSTALL
     // 开始写入
-    install_record()
+    install_record();
 #endif
 
     
