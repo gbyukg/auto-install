@@ -19,6 +19,8 @@
 #include <time.h>
 #include <stdarg.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "atoi_curl.h"
 
 #ifdef SERVERINSTALL
@@ -59,7 +61,7 @@ fflush(NULL); \
 int rtCode = -1; /* return code */ \
 if ((rtCode = func) == -1) {\
 if(log_file != NULL) {\
-CURTIME(stderr);\
+DEB_CURTIME(stderr);\
 perror(": System call [" KMAG #func KNRM "] wrong"KRED);\
 fprintf(stderr,\
 "** FILE: %s\n"\

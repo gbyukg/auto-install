@@ -192,6 +192,9 @@ static void
 init_install()
 {
     install_deb("init install ...\n");
+
+    umask(022);
+    
     int len = sizeof(char) * 1024;
     atoi_install_opt.cur_dir = atoi_malloc(len);
 
