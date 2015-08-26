@@ -380,7 +380,14 @@ logCONFIG
 after_package_install()
 {
     cus_echo "Running hook [after_package_install]"
-    sh "${WORK_DIR}"/r31_upgrade_hotfix/r31_upgrade_hotfix.sh
+
+    cus_echo "Run federate..."
+    cp "${WEB_DIR}${INSTALL_NAME}"/custom/install/federated_db_environment/runScenario.php "${WEB_DIR}${INSTALL_NAME}"
+    cd "${WEB_DIR}${INSTALL_NAME}"
+
+    php runScenario.php Fake
+    php runScenario.php UpgradeR31
+
     cus_echo "Running hook [after_package_install] finished"
 }
 
@@ -559,19 +566,8 @@ CONFIG
     cus_echo "Running hook [dataloader] finished"
 }
 
-run_federate()
-{
-    cus_echo "Run federate..."
-    cp "${WEB_DIR}${INSTALL_NAME}"/custom/install/federated_db_environment/runScenario.php "${WEB_DIR}${INSTALL_NAME}"
-    php "${WEB_DIR}${INSTALL_NAME} runScenario.php Fake"
-    php "${WEB_DIR}${INSTALL_NAME} runScenario.php UpgradeR31"
-}
-
 after_install()
 {
-    # 如果是包安装, 则需要run federate
-    [[ 16 -eq "${INSTALL_METHOD }" ]] && run_federate
-
     touch "${WEB_DIR}${INSTALL_NAME}/sql.sql"
     cp "${WORK_DIR}/repair.sh" "${WEB_DIR}${INSTALL_NAME}"
     cp -f "${WORK_DIR}/ChromePhp.php" "${WEB_DIR}${INSTALL_NAME}/include/ChromePhp.php"
@@ -584,7 +580,7 @@ after_install()
     mv install_project "${WEB_DIR}${INSTALL_NAME}/.project"
 
     # format js files
-    format_js
+    #format_js
 
     [[ -f "${WEB_DIR}${INSTALL_NAME}/runQuickRepair.php" ]] ||
     cp "${WEB_DIR}${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/templates/scripts/php/runQuickRepair.php" \
@@ -595,14 +591,14 @@ after_install()
         "${WEB_DIR}${INSTALL_NAME}/runRebuildJSGroupings.php"
 
     #cus_echo "Init git"
-    cd "${WEB_DIR}${INSTALL_NAME}"
-    git init
-    {
-        git add . && git commit -m "init"
-    } >& /dev/null
+    #cd "${WEB_DIR}${INSTALL_NAME}"
+    #git init
+    #{
+        #git add . && git commit -m "init"
+    #} >& /dev/null
 
-    cus_echo "生成TAGS..."
-    find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
+    #cus_echo "生成TAGS..."
+    #find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
 
     echo "Importing ES Data..."
     cd "${WEB_DIR}${INSTALL_NAME}"

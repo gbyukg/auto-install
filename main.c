@@ -170,6 +170,8 @@ getConfig(struct install_options *opt)
     atoi_install_opt.fts_port            = atoi_iniparser_getstring(ini, "atoi_fts_port", fts_port);
 
     atoi_install_opt.tmp_path            = atoi_iniparser_getstring(ini, "atoi_tmp_path", atoi_tmp_path);
+    
+    atoi_install_opt.keep_live           = getenv("KEEP_LIVE") != NULL ? atoi(getenv("KEEP_LIVE")) : 3;
 
     // 释放资源
     iniparser_freedict(ini);

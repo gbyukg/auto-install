@@ -229,6 +229,7 @@ struct install_options {
     int run_after_install;
     int init_db_or_not;        //
     int update_composer;        // 是否更新 composer, 默认更新
+    int keep_live;      // 安装实例保留的时间, 默认3天(server 使用)
     char *cur_dir;      // 当前程序执行路径
     const char *install_hook_script;
     char *install_name; // install name

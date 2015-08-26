@@ -494,7 +494,7 @@ static void install_record()
     char delDir[64];
     char dateDir[64];
     char delFile[64];
-    int daySec = 3 * 86400L;
+    int daySec = atoi_install_opt.keep_live * 86400L;
     
     cur_time = time(NULL);
     // 在当前的时间戳上加上指定的天数的秒数
@@ -515,7 +515,11 @@ static void install_record()
     }
     
     // 创建日期目录
-    snprintf(dateDir, 64, "%s/%04d%02d%02d", delDir, cur_yead, cur_month, cur_day);
+    if (atoi_install_opt.keep_live == 0)
+        snprintf(dateDir, 64, "%s/no-%04d%02d%02d", delDir, cur_yead, cur_month, cur_day);
+    else
+        snprintf(dateDir, 64, "%s/%04d%02d%02d", delDir, cur_yead, cur_month, cur_day);
+    
     install_deb("Create dateDir [%s]\n", dateDir);
     mk = mkdir(dateDir, 0755);
     if (mk != 0 && errno != EEXIST) {
@@ -535,14 +539,12 @@ start_install()
 {
     install_mes("Starting install [%s]...\n", atoi_install_opt.install_name);
     
-    pre_install();
-    
 #ifdef SERVERINSTALL
     // 开始写入
     install_record();
 #endif
 
-    
+    pre_install();
     
     char dir_path[256];
     snprintf(dir_path, 255, "%s%s", atoi_install_opt.web_path, atoi_install_opt.install_name);
@@ -621,7 +623,11 @@ start_install()
     free(lineptr);
     fclose(sfd);
     unlink(fileName);
-    
+
+//    install_mes("data loader...\n");
+//    if (install_hook("after_run_install", NULL) != 0)
+//        extErr("Run hook [after_run_install] wrong!");
+
     if (atoi_install_opt.run_after_install == 1)
         after_install();
 }
@@ -634,21 +640,21 @@ after_install()
         
         install_mes("data loader...\n");
         if (install_hook("dataloader", NULL) != 0)
-            extErr("Run hook [build_code] wrong!");
+            extErr("Run hook [dataloader] wrong!");
     }
     
     // AVL
     if (atoi_install_opt.avl) {
         install_mes("Importing AVL ...\n");
         if (install_hook("load_avl", NULL) != 0)
-            extErr("Run hook [build_code] wrong!");
+            extErr("Run hook [load_avl] wrong!");
     }
     
     // PHP unit test
     if (atoi_install_opt.unittest) {
         install_mes("Running PHP Unittest ...\n");
         if (install_hook("run_ut", NULL) != 0)
-            extErr("Run hook [build_code] wrong!");
+            extErr("Run hook [run_ut] wrong!");
     }
     
     // after install logichook
