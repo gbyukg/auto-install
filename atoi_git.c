@@ -242,12 +242,24 @@ atoi_git_checkout_branch(git_repository *repo,
                         install_name,
                         "master");
 
+#ifdef LIBGIT2_CHECKOUT
+            install_deb("Checkout branch use libgit\n");
             git_reference *nnew_branch_ref = NULL;
             char *n_target_branch_ref_name = "refs/heads/master";
             atoi_git_checkout_branch(repo,
                                      nnew_branch_ref,
                                      n_target_branch_ref_name,
                                      n_target_branch_ref_name + (strlen(n_target_branch_ref_name) - strlen(strrchr(n_target_branch_ref_name, '/')) + 1));
+#else
+            install_deb("Checkout branch use GIT\n");
+            char checkout_cmd[128];
+            snprintf(checkout_cmd, 127, "cd %s && git checkout master && git submodule update", atoi_install_opt.git_path);
+            int r = shell_call(0, checkout_cmd);
+            if (r != 0) {
+                fprintf(stderr, "Run command [%s] wrong!", checkout_cmd);
+                exit(r);
+            }
+#endif
         }
         // 删除分支
         
@@ -262,18 +274,32 @@ atoi_git_checkout_branch(git_repository *repo,
 
     // checkout new branch
     install_mes("Checkout head to the new branch [%s]\n", install_name);
+#ifdef LIBGIT2_CHECKOUT
     git_err(git_repository_set_head(repo, git_reference_name(new_branch_ref)));
     
     install_deb("Checkout to the current head...\n");
     git_err(git_checkout_head(repo, &checkout_opts));
+#else
+    char checkout_cmd[128];
+    snprintf(checkout_cmd, 127, "cd %s && git checkout %s",
+             atoi_install_opt.git_path,
+             install_name);
+    int r =shell_call(0, checkout_cmd);
+    if (r != 0) {
+        fprintf(stderr, "Run command [%s] wrong!", checkout_cmd);
+        exit(r);
+    }
+#endif
     
     // 更新 submodule
     install_mes("Update submodule ...\n");
     git_err(git_submodule_foreach(repo, atoi_git_submodule_foreach_cb, NULL));
     
+#ifdef LIBGIT2_CHECKOUT
     // 提交改动
     install_deb("Commit checkout files ...\n");
     atoi_git_commit_from_index(repo, atoi_install_opt.install_name);
+#endif
     
     if (target_branch_obj != NULL)
         git_object_free(target_branch_obj);
@@ -286,10 +312,10 @@ atoi_git_add_all(git_repository *repo)
     git_index *index;
 //    git_strarray array = {0};
     
-    git_repository_index(&index, repo);
+    git_err(git_repository_index(&index, repo));
     
-    git_index_add_all(index, NULL, 0, NULL, NULL);
-    git_index_write(index);
+    git_err(git_index_add_all(index, NULL, 0, NULL, NULL));
+    git_err(git_index_write(index));
     git_index_free(index);
 }
 
@@ -297,7 +323,7 @@ static void
 atoi_git_commit_from_index(git_repository *repo, const char *commit_message)
 {
     install_deb("git commit...\n");
-    git_config    *conf      = NULL;
+//    git_config    *conf      = NULL;
     git_signature *signature = NULL;
     git_index     *index     = NULL;
     git_tree      *tree      = NULL;
@@ -336,7 +362,6 @@ atoi_git_commit_from_index(git_repository *repo, const char *commit_message)
                       (const git_commit**)&commit
                       );
     
-    git_config_free(conf);
     git_index_free(index);
     git_signature_free(signature);
     git_commit_free(commit);
@@ -468,6 +493,10 @@ atoi_git_merge(git_repository *repo, const char *refs_name)
     git_merge_options merge_opts = GIT_MERGE_OPTIONS_INIT;
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     
+    char git_status_cmd[128];
+    snprintf(git_status_cmd, 127, "cd %s && git status", atoi_install_opt.git_path);
+    shell_call(0, git_status_cmd);
+    
     checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE
     | GIT_CHECKOUT_ALLOW_CONFLICTS
     | GIT_CHECKOUT_REMOVE_UNTRACKED;
@@ -480,9 +509,8 @@ atoi_git_merge(git_repository *repo, const char *refs_name)
                       &merge_opts,
                       &checkout_opts)
             );
-    
-    // 获取当前状态信息
-    atoi_get_git_status(repo);
+
+//    atoi_get_git_status(repo);
     
     // 清理操作
     git_err(git_repository_state_cleanup(repo));
@@ -596,15 +624,8 @@ void pull_install_prepare_git(void)
     // merge base branch
     atoi_git_merge(repo, head_refs_name);
     
-//    if (new_branch_ref != NULL)
-//        git_reference_free(new_branch_ref);
-
-    // 释放资源
-//    if (base_refs != NULL)
-//        git_reference_free(base_refs);
-//    if (head_refs != NULL)
-//        git_reference_free(head_refs);
-//    git_reference_free(new_branch_ref);
+    atoi_git_commit_from_index(repo, atoi_install_opt.install_name);
+    
     if (base_remote != NULL)
         git_remote_free(base_remote);
     if (head_remote != NULL)

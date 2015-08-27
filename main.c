@@ -129,7 +129,6 @@ getConfig(struct install_options *opt)
     const char *sc_admin            = getenv("ATOI_SC_ADMIN");
     const char *sc_admin_pwd        = getenv("ATOI_SC_ADMIN_PWD");
 
-
     const char *dbname              = getenv("ATOI_DBNAME");
     const char *db_port             = getenv("ATOI_DB_PORT");
     const char *db_host             = getenv("ATOI_DB_HOST");
@@ -177,6 +176,59 @@ getConfig(struct install_options *opt)
     iniparser_freedict(ini);
 }
 
+/**
+ *  用于记录安装过哪些文件, 之后清除使用
+ */
+static void install_record()
+{
+    errno = 0;
+    time_t cur_time;
+    int mk;
+    struct tm *c_tm;
+    //    char delDateStr[18];
+    char delDir[64];
+    char dateDir[64];
+    char delFile[64];
+    int daySec = atoi_install_opt.keep_live * 86400L;
+    
+    cur_time = time(NULL);
+    // 在当前的时间戳上加上指定的天数的秒数
+    cur_time += daySec;
+    c_tm = localtime(&cur_time);
+    
+    int cur_yead  = c_tm->tm_year + 1900;
+    int cur_month = c_tm->tm_mon + 1;
+    int cur_day   = c_tm->tm_mday;
+    
+    // 创建存储根目录
+    snprintf(delDir, 64, "%s/%s", atoi_install_opt.home_dir, ".ai_del");
+    install_deb("Create delDir [%s]\n", delDir);
+    mk = mkdir(delDir, 0755);
+    if (mk != 0 && errno != EEXIST) {
+        fprintf(stdout, "Make dir [%s] wrong:", delDir);
+        perror("");
+    }
+    
+    // 创建日期目录
+    if (atoi_install_opt.keep_live == 0)
+        snprintf(dateDir, 64, "%s/no-%04d%02d%02d", delDir, cur_yead, cur_month, cur_day);
+    else
+        snprintf(dateDir, 64, "%s/%04d%02d%02d", delDir, cur_yead, cur_month, cur_day);
+    
+    install_deb("Create dateDir [%s]\n", dateDir);
+    mk = mkdir(dateDir, 0755);
+    if (mk != 0 && errno != EEXIST) {
+        fprintf(stdout, "Make dir [%s] wrong:", dateDir);
+        perror("");
+    }
+    
+    // 根据 install_name 创建文件
+    snprintf(delFile, 64, "%s/%s", dateDir, atoi_install_opt.install_name);
+    install_deb("Create delFiel [%s]\n", delFile);
+    int fd = SYSCALL(open(delFile, O_RDWR | O_CREAT, 0644));
+    close(fd);
+}
+
 static void
 open_log()
 {
@@ -188,6 +240,11 @@ open_log()
         perror("fopen wrong!");
         exit(EXIT_FAILURE);
     }
+    
+#ifdef SERVERINSTALL
+    // 开始写入
+    install_record();
+#endif
 }
 
 static void
