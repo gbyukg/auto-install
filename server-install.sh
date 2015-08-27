@@ -27,7 +27,7 @@
 export ATOI_CONFIG_PATH=/home/stallman/auto-install/config.ini
 
 #gcc -Wall -g -lyajl -lgit2 common.c dictionary.c iniparser.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-sc -DSERVERINSTALL && ./atoi-sc install --branch-install sugareps:ibm_r30 --debug --install-name pull_install_18519 --no-dl
-gcc -Wall -g  -lcurl -lyajl -I/usr/local/src/include -L/usr/local/src/lib -lgit2 common.c dictionary.c iniparser.c atoi_curl.c atoi_install.c atoi_git.c main.c -o atoi-sc -DSERVERINSTALL
+gcc -Wall -g  -lcurl -lyajl -I/usr/local/src/include -L/usr/local/src/lib -lgit2 src/common.c src/dictionary.c src/iniparser.c src/atoi_curl.c src/atoi_install.c src/atoi_git.c src/main.c -o atoi-sc -DSERVERINSTALL
 
 #./atoi-sc install --pack-install "http://sc2.gnuhub.com/sugarsync/ibm_production/SugarUltimate-production-135-08102015.zip http://sc2.gnuhub.com/sugarsync/ibm_r31/SugarUltimate-r31-13-base-production-135-08132015.zip" --debug --install-name 50 --dbname DB_50
 

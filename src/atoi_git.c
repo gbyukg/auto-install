@@ -494,7 +494,7 @@ atoi_git_merge(git_repository *repo, const char *refs_name)
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     
     char git_status_cmd[128];
-    snprintf(git_status_cmd, 127, "cd %s && git status", atoi_install_opt.git_path);
+    snprintf(git_status_cmd, 127, "cd %s && git diff --stat HEAD^", atoi_install_opt.git_path);
     shell_call(0, git_status_cmd);
     
     checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE
@@ -624,6 +624,11 @@ void pull_install_prepare_git(void)
     // merge base branch
     atoi_git_merge(repo, head_refs_name);
     
+    char commit_msg[512];
+    snprintf(commit_msg, 511, "%s: Merage from [%s:%s]\n",
+             atoi_install_opt.install_name,
+             atoi_install_opt.pull_info->head_user_login,
+             atoi_install_opt.pull_info->head_ref);
     atoi_git_commit_from_index(repo, atoi_install_opt.install_name);
     
     if (base_remote != NULL)
