@@ -380,8 +380,17 @@ logCONFIG
 after_package_install()
 {
     cus_echo "Running hook [after_package_install]"
+    # 获取最后一个升级包名称, 用于获取dataloader
+    local last_package="${1}"
 
-    cus_echo "Run federate..."
+    # 下载包文件到缓存目录下
+    wget -q -P "${TMP_DIR}" "${last_package}" -O "${TMP_DIR}"/dataloader.zip
+    error_check_exit "无法下载压缩包 [${last_package}]"
+    # 将dataloader 从最后一个升级包中解压出来
+    unzip "${TMP_DIR}"/dataloader.zip -d "${TMP_DIR}" "ibm/dataloaders/*" > /dev/null
+    error_check_exit "无法解压 [${last_package}]"
+
+    light_magenta_echo "Run federate..."
     cp "${WEB_DIR}${INSTALL_NAME}"/custom/install/federated_db_environment/runScenario.php "${WEB_DIR}${INSTALL_NAME}"
     cd "${WEB_DIR}${INSTALL_NAME}"
 
@@ -512,10 +521,10 @@ dataloader()
 {
     cus_echo "Running hook [dataloader]"
 
-    if [[ -z "${6}"  ]]; then
+    if [[ -z "${1}"  ]]; then
         local DATALOADER_PATH="${GIT_DIR}"ibm/dataloaders
     else
-        local DATALOADER_PATH=${6}
+        local DATALOADER_PATH=${1}
     fi
     cus_echo "running data loader in [${DATALOADER_PATH}]..."
     cd "${DATALOADER_PATH}" && rm -rf config.php
@@ -557,7 +566,7 @@ CONFIG
     php populate_SmallDataset.php
 
     #[[ X"true" == X"${GIT_RESET}" ]] && cd "${GIT_DIR}ibm/dataloaders" && git checkout config.php
-    [[ -z "${6}"  ]] && cd "${GIT_DIR}ibm/dataloaders" && git checkout config.php
+    [[ -z "${1}"  ]] && git checkout config.php
 
     cd "${WEB_DIR}${INSTALL_NAME}/batch_sugar/RTC_19211"
     php -f rtc_19211_main.php

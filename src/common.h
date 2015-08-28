@@ -231,6 +231,7 @@ struct install_options {
     int update_composer;        // 是否更新 composer, 默认更新
     int keep_live;      // 安装实例保留的时间, 默认3天(server 使用)
     char *cur_dir;      // 当前程序执行路径
+    char *dataloader_dir;
     const char *install_hook_script;
     char *install_name; // install name
     const char *init_db_script;
@@ -242,7 +243,6 @@ struct install_options {
     const char *def_base_user;// sugareps
     const char *def_head_user;// gbyukg
     const char *home_dir;     // home
-    const char *dataloader_dir;
     
     const char *sc_license;
     const char *web_host;     // http://localhost

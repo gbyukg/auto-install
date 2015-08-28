@@ -250,7 +250,7 @@ void package_install(const char *get_package_info)
 {
     // 禁止 build 代码
     atoi_install_opt.build_code_or_not = 0;
-    // 不跑 after_install hook
+    // 不跑 after_install hook, 需要手动跑
     atoi_install_opt.run_after_install = 0;
     // 禁止更新composer
     // atoi_install_opt.update_composer = 0;
@@ -266,6 +266,7 @@ void package_install(const char *get_package_info)
     time(&now); // 缓存目录名
     
     strcpy(install_package, get_package_info);
+    char *last_package = NULL;
     char *upgrade_package = strtok(install_package, " ");
 
     while (upgrade_package != NULL) {
@@ -314,14 +315,20 @@ void package_install(const char *get_package_info)
             if (install_hook("package_install", param) != 0)
                 extErr("解压缩文件 [%s] 失败!", upgrade_package);
         }
+        last_package = upgrade_package;
         i++;
         upgrade_package = strtok(NULL, " ");
-        
-        // run dataloader
-        if (upgrade_package == NULL) {
-            if (install_hook("after_package_install", NULL) != 0)
-                extErr("执行hook [after_package_install] 失败!");
-        }
+    }
+    
+    // 设定 dataloader 路径
+    atoi_install_opt.dataloader_dir = malloc(sizeof(char) * 512);
+    snprintf(atoi_install_opt.dataloader_dir, 522, "%s/ibm/dataloaders",
+             atoi_install_opt.tmp_path);
+    install_deb("Dataloader path is [%s]\n", atoi_install_opt.dataloader_dir);
+    // run dataloader
+    if (upgrade_package == NULL) {
+        if (install_hook("after_package_install", last_package) != 0)
+            extErr("执行hook [after_package_install] 失败!");
     }
     
     // dataloader
@@ -579,8 +586,11 @@ after_install()
     if (atoi_install_opt.dataloader) {
         
         install_mes("data loader...\n");
-        if (install_hook("dataloader", NULL) != 0)
+        if (install_hook("dataloader", atoi_install_opt.dataloader_dir) != 0)
             extErr("Run hook [dataloader] wrong!");
+        if (atoi_install_opt.dataloader_dir != NULL) {
+            free((void *)atoi_install_opt.dataloader_dir);
+        }
     }
     
     // AVL
