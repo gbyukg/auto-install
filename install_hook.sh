@@ -110,6 +110,13 @@ error_check_exit()
     [[ 0 -ne "$?" ]] && exit_err "${1}"
 }
 
+ERRTRAP()
+{
+    red_echo "[LINE:$1] Error: Command or function exited with status $?"
+}
+
+trap 'ERRTRAP $LINENO' ERR
+
 install_check()
 {
     # apache
