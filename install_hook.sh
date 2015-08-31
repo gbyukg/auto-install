@@ -179,18 +179,6 @@ after_build()
     cus_echo "Copying from [${BUILD_DIR}ult/sugarcrm] => [${WEB_DIR}${INSTALL_NAME}]"
     cp -r "${BUILD_DIR}ult/sugarcrm" "${WEB_DIR}${INSTALL_NAME}"
 
-    # 修改错误日志目录为当前安装实例目录下
-    echo "error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
-    echo "ini_set('error_log', '${WEB_DIR}${INSTALL_NAME}/php_error.log');" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
-    echo "ini_set('log_errors', 1);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
-    echo "ini_set('display_errors', 0);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
-    echo "ini_set('log_errors_max_len', 1024);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
-    #echo "error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
-    #echo "ini_set('error_log', '${WEB_DIR}${INSTALL_NAME}/php_error.log');" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
-    #echo "ini_set('log_errors', 1);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
-    #echo "ini_set('display_errors', 0);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
-    #echo "ini_set('log_errors_max_len', 1024);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
-
     cus_echo "Running hook [after_build] finished"
 }
 
@@ -271,7 +259,7 @@ before_upgrade()
 package_install()
 {
     cus_echo "Running hook [package_install]"
-    local install_meth="${1}"
+    local install_meth="${1}" # url | lczip | upgrade
     local download_url="${2}"
     local package_name="${3}"
     local tmp_dir="${4}"
@@ -344,8 +332,8 @@ package_install()
         before_upgrade
 
         # 进入压缩目录
-        #local UPGRADE_INS="${TMP_DIR}/${tmp_dir}"/ibm/SugarInstanceManager
-        local UPGRADE_INS="${WEB_DIR}/${INSTALL_NAME}"/vendor/sugareps/SugarInstanceManager
+        local UPGRADE_INS="${TMP_DIR}/${tmp_dir}"/ibm/SugarInstanceManager
+        #local UPGRADE_INS="${WEB_DIR}/${INSTALL_NAME}"/vendor/sugareps/SugarInstanceManager
         cd "${UPGRADE_INS}"
 
         mkdir -p "custom/include/Config/configs"
@@ -403,7 +391,7 @@ after_package_install()
     local last_package="${1}"
 
     # 下载包文件到缓存目录下
-    wget -q -P "${TMP_DIR}" "${last_package}" -O "${TMP_DIR}"/dataloader.zip
+    wget -q "${last_package}" -O "${TMP_DIR}"/dataloader.zip
     error_check_exit "无法下载压缩包 [${last_package}]"
     # 将dataloader 从最后一个升级包中解压出来
     unzip "${TMP_DIR}"/dataloader.zip -d "${TMP_DIR}" "ibm/dataloaders/*" > /dev/null
@@ -431,7 +419,14 @@ before_install()
         composer install
     }
 
-    # 修改 PHP 错误日志
+    # 修改错误日志目录为当前安装实例目录下
+    for file in index.php install.php; do
+        sed -i "1a ini_set('log_errors_max_len', 1024);" "${WEB_DIR}${INSTALL_NAME}/${file}"
+        sed -i "1a ini_set('display_errors', 0);" "${WEB_DIR}${INSTALL_NAME}/${file}"
+        sed -i "1a ini_set('error_log', '${WEB_DIR}${INSTALL_NAME}/php_error.log');" "${WEB_DIR}${INSTALL_NAME}/${file}"
+        sed -i "1a ini_set('log_errors', 1);" "${WEB_DIR}${INSTALL_NAME}/${file}"
+        sed -i "1a error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);" "${WEB_DIR}${INSTALL_NAME}/${file}"
+    done
 
     cus_echo "Running hook [before_install] finished"
 }
@@ -598,8 +593,8 @@ after_install()
 {
     touch "${WEB_DIR}${INSTALL_NAME}/sql.sql"
     cp "${WORK_DIR}/repair.sh" "${WEB_DIR}${INSTALL_NAME}"
-    cp -f "${WORK_DIR}/ChromePhp.php" "${WEB_DIR}${INSTALL_NAME}/include/ChromePhp.php"
-    echo "require_once 'ChromePhp.php';" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
+    cp -f "${WORK_DIR}/ChromePhp.php" "${WEB_DIR}${INSTALL_NAME}/ChromePhp.php"
+    echo "require_once 'ChromePhp.php';" >> "${WEB_DIR}${INSTALL_NAME}/config_override.php"
 
     add_ignore
     mv install_gitignore "${WEB_DIR}${INSTALL_NAME}/.gitignore"
@@ -608,7 +603,7 @@ after_install()
     mv install_project "${WEB_DIR}${INSTALL_NAME}/.project"
 
     # format js files
-    #format_js
+    format_js
 
     [[ -f "${WEB_DIR}${INSTALL_NAME}/runQuickRepair.php" ]] ||
     cp "${WEB_DIR}${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/templates/scripts/php/runQuickRepair.php" \
@@ -618,15 +613,15 @@ after_install()
     cp "${WEB_DIR}${INSTALL_NAME}/vendor/sugareps/SugarInstanceManager/templates/scripts/php/runRebuildJSGroupings.php" \
         "${WEB_DIR}${INSTALL_NAME}/runRebuildJSGroupings.php"
 
-    #cus_echo "Init git"
-    #cd "${WEB_DIR}${INSTALL_NAME}"
-    #git init
-    #{
-        #git add . && git commit -m "init"
-    #} >& /dev/null
+    cus_echo "Init git"
+    cd "${WEB_DIR}${INSTALL_NAME}"
+    git init
+    {
+        git add . && git commit -m "init"
+    } >& /dev/null
 
-    #cus_echo "生成TAGS..."
-    #find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
+    cus_echo "生成TAGS..."
+    find . -name "*.php" -not -path "./cache/*" > ./.git/list && gtags -f ./.git/list
 
     echo "Importing ES Data..."
     cd "${WEB_DIR}${INSTALL_NAME}"
