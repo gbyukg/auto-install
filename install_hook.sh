@@ -179,6 +179,18 @@ after_build()
     cus_echo "Copying from [${BUILD_DIR}ult/sugarcrm] => [${WEB_DIR}${INSTALL_NAME}]"
     cp -r "${BUILD_DIR}ult/sugarcrm" "${WEB_DIR}${INSTALL_NAME}"
 
+    # 修改错误日志目录为当前安装实例目录下
+    echo "error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
+    echo "ini_set('error_log', '${WEB_DIR}${INSTALL_NAME}/php_error.log');" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
+    echo "ini_set('log_errors', 1);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
+    echo "ini_set('display_errors', 0);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
+    echo "ini_set('log_errors_max_len', 1024);" >> "${WEB_DIR}${INSTALL_NAME}/config.php"
+    #echo "error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
+    #echo "ini_set('error_log', '${WEB_DIR}${INSTALL_NAME}/php_error.log');" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
+    #echo "ini_set('log_errors', 1);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
+    #echo "ini_set('display_errors', 0);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
+    #echo "ini_set('log_errors_max_len', 1024);" >> "${WEB_DIR}${INSTALL_NAME}/include/utils.php"
+
     cus_echo "Running hook [after_build] finished"
 }
 
